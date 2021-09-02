@@ -5,10 +5,14 @@ Dieses git-Repository enthält Skripte und Daten zur Anreicherung des K10plus-Ka
 ## 1. Abfrage der NSK-Normdatensätze aus dem Bereich Theologie
 
     $ ./nsk-normdaten.sh The > nsk-the.tsv
+    $ wc -l nsk-the.tsv
+    9273 nsk-the.tsv
 
  und Reduktion auf Grundnotation 
 
-    $ ./nsk-grundnotation.pl < nsk-the.tsv
+    $ ./nsk-grundnotation.pl < nsk-the.tsv > nsk-notationen-the.tsv
+    $ awk -F'\t' '{print $2}' nsk-notationen-the.tsv | sort | uniq | wc -l
+    38
 
 ## 2. Abfrage aller Titeldatensätze mit verknüpftem NSK-Normdatensatz
 
@@ -31,12 +35,17 @@ Anzahl unterschiedlicher Titeldatensätze:
     $ picadata 045Q nsk-unique-titles.pica | picadata count | grep records
     5801 records
 
-## 4. Abfrage und Auswertung der Mappings
+## 4. Abfrage und Auswertung der Mappings sowie Ausgabe der Anreicherung
 
-Es werden zur Anreicherung alle Mapping vom Typ =, <, und ≈ berücksichtigt.
+Es werden zur Anreicherung alle Mapping vom Typ =, <, und ≈ berücksichtigt. Da die Konkordanz für die Fachgruppe The vollständig bis zur tiefsten Ebene ist (alle Klassen sind direkt gemappt), vereinfacht sich der Mappingprozess.
 
-...
+    $./anreicherung.pl < nsk-unique-titles.pica  > nsk-the-anreicherung.pic
+    Kein Mapping gefunden für NSK 'The B 900'
+    Kein Mapping gefunden für NSK 'The B 100'
+    Kein Mapping gefunden für NSK 'The E 1100'
+    Kein Mapping gefunden für NSK 'The A 2200'
+    $ picadata count nsk-the-anreicherung.pica 
+    18025 records
+    43912 fields
 
-## 5. Ermittlung und Ausgabe der Anreicherung
-
-...
+Das heisst es können 25887 BK-Notationen an 18025 Datensätzen hinzugefügt werden. 
