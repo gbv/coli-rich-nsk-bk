@@ -56,9 +56,6 @@ importer('pp')->each(
         my $record = shift;
         my $ppn    = $record->{_id};
 
-        # Titel hat schon BK-Notation
-        next if pica_match( $record, '045Q' );
-
         my @relppns = uniq( pica_values( $record, '145Z$9' ) );
 
         # warn "$ppn: Kein NSK-Satz für PPN $_\n"
@@ -72,27 +69,31 @@ importer('pp')->each(
             push @mappings, @$m;
         }
 
-        if (@mappings) {
+        return unless @mappings;
 
-            my $fields = [ [ '003@', '', '0', $ppn, ' ' ] ];
-            my %bkseen;
-            for my $m (@mappings) {
-                my $bk = $m->{to}{memberSet}[0]{notation}[0];
+        # Titel hat schon BK-Notation
+        my @found = pica_values( $record, '045Q$a' );
 
-                next if $bkseen{$bk}++;    # nicht mehrfach gleiche BK
+        my %bkseen = map { ( $_ => 1 ) } @found;
+        my @fields;
 
-                push @$fields,
-                  [
-                    '045Q', '01',
-                    9 => getBKPPN($bk),
-                    a => $bk,
-                    A => 'coli-conc NSK->BK',
-                    A => $m->{uri},
-                    '+'
-                  ];
-            }
+        for my $m (@mappings) {
+            my $bk = $m->{to}{memberSet}[0]{notation}[0];
 
-            $writer->write($fields);
+            next if $bkseen{$bk}++;    # nicht mehrfach gleiche BK
+
+            push @fields,
+              [
+                '045Q', '01',
+                9 => getBKPPN($bk),
+                a => $bk,
+                A => 'coli-conc NSK->BK',
+                A => $m->{uri},
+                '+'
+              ];
         }
+
+        $writer->write( [ [ '003@', '', '0', $ppn, ' ' ], @fields ] )
+          if @fields;
     }
 );
