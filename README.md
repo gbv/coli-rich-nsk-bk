@@ -47,7 +47,7 @@ Es werden zur Anreicherung alle Mapping vom Typ =, <, und ≈ berücksichtigt. D
     Kein Mapping gefunden für NSK 'The B 100'
     Kein Mapping gefunden für NSK 'The E 1100'
     $ picadata count nsk-the-anreicherung.pica 
-    22470 records
-    54433 fields
+    21258 records
+    47566 fields
 
-Das heisst es können 25887 BK-Notationen an 18025 Datensätzen hinzugefügt werden. 
+Das heisst es können 26306 BK-Notationen an 21258 Datensätzen hinzugefügt werden. 

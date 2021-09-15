@@ -32,6 +32,29 @@ sub getNSKBKMapping {
     );
 }
 
+sub bkAncestors {
+    my ($notation) = @_;
+
+    state $api = JSON::API->new('http://api.dante.gbv.de/ancestors');
+    state %ancestors;
+
+    unless ( $ancestors{$notation} ) {
+        my $uri = "http://uri.gbv.de/terminology/bk/$notation";
+        my $param = { uri => $uri, properties => "notation" };
+        my @ids =
+          ( $notation, map { $_->{notation}[0] } @{ $api->get( '', $param ) } );
+
+        # say STDERR "ancestors of $uri: " . join ' ', @ids;
+
+        while (@ids) {
+            my $id = shift @ids;
+            $ancestors{$id} = [@ids];
+        }
+    }
+
+    return $ancestors{$notation};
+}
+
 sub getBKPPN {
     my $notation = shift;
 
@@ -71,11 +94,23 @@ importer('pp')->each(
 
         return unless @mappings;
 
-        # Titel hat schon BK-Notation
-        my @found = pica_values( $record, '045Q$a' );
-
-        my %bkseen = map { ( $_ => 1 ) } @found;
+        # Bereits vorhandene BK-Notationen
+        my %bkseen = map { ( $_ => 1 ) } pica_values( $record, '045Q$a' );
         my @fields;
+
+        # Alle BK-Notationen des Titels
+        my %all = %bkseen;
+        $all{$_} = 1 for map { $_->{to}{memberSet}[0]{notation}[0] } @mappings;
+
+        for ( my ( $id, $status ) = each %all ) {
+            for ( @{ bkAncestors($id) } ) {
+                if ( $all{$_} ) {
+
+                    # übergeordnete Klasse nicht ebenfalls vergeben
+                    $bkseen{$_} = 1;
+                }
+            }
+        }
 
         for my $m (@mappings) {
             my $bk = $m->{to}{memberSet}[0]{notation}[0];
