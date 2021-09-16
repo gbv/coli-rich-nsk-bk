@@ -1,8 +1,22 @@
-# NSK-BK Anreicherung
+# coli-rich Skripte
+
+## Wartung und Korrekturen
+
+Die Anreicherung der Sacherschließung durch Mappings wird so in den Katalog eingetragen, dass sich nachvollziehen lässt auf Grundlage welcher Mappings die Anreicherung vorgenommen wurde. Werden nachträglich Fehler erkannt so lässt sich die Anreicherung automatisch korrigieren oder verbessern. Dabei müssen zwei Fälle unterschieden werden:
+
+1. Korrektur der Anreicherung einzelner Titel
+
+   Haben sich die vorhandenen Mappings oder die Sacherschließung eines Titels geändert so wird die gesamte Anreicherung des Titels neu berechnet.
+
+2. Korrektur einzelner Mappings
+
+   Stellt sich heraus dass einzelne Mappings falsch oder nicht genau genug waren, so müssen alle mit diesem Mapping angereicherten Titel überprüft werden. Zur Abfrage dieser Titel dient das Skript `bin/titles-with-mapping`.
+
+## NSK-BK Anreicherung
 
 Dieses git-Repository enthält Skripte und Daten zur Anreicherung des K10plus-Katalog um Notationen der [Basisklassifikation (BK)](http://bartoc.org/en/node/18785) auf Grundlage von Erschließungsdaten und Mappings mit der [Systematik des neuen Sachkatalogs (NSK)](http://bartoc.org/en/node/20298) der Staatsbibliothek zu Berlin.
 
-## 1. Abfrage der NSK-Normdatensätze aus dem Bereich Theologie
+### 1. Abfrage der NSK-Normdatensätze aus dem Bereich Theologie
 
     $ ./nsk-normdaten.sh The > nsk-the.tsv
     $ wc -l nsk-the.tsv
@@ -14,7 +28,7 @@ Dieses git-Repository enthält Skripte und Daten zur Anreicherung des K10plus-Ka
     $ awk -F'\t' '{print $2}' nsk-notationen-the.tsv | sort | uniq | wc -l
     36
 
-## 2. Abfrage aller Titeldatensätze mit verknüpftem NSK-Normdatensatz
+### 2. Abfrage aller Titeldatensätze mit verknüpftem NSK-Normdatensatz
 
     $ awk '{print $1}' nsk-the.tsv | xargs -L 1 ./sbb-rel.sh > nsk-title-records.pica
 
@@ -33,12 +47,12 @@ Anzahl unterschiedlicher Titeldatensätze:
     24624 holdings
     101862 fields
  
-## 3. Analyse der Titeldaten
+### 3. Analyse der Titeldaten
 
     $ picadata 045Q nsk-unique-titles.pica | picadata count | grep records
     5801 records
 
-## 4. Abfrage und Auswertung der Mappings sowie Ausgabe der Anreicherung
+### 4. Abfrage und Auswertung der Mappings sowie Ausgabe der Anreicherung
 
 Es werden zur Anreicherung alle Mapping vom Typ =, <, und ≈ berücksichtigt. Da die Konkordanz für die Fachgruppe `The` vollständig bis zur tiefsten Ebene ist (alle Klassen sind direkt gemappt), vereinfacht sich der Mappingprozess.
 

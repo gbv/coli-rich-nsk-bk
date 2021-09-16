@@ -3,16 +3,10 @@ importer:
     package: PICA
     options:
       type: plain
-  sbb:
+  swb-299:
     package: SRU
     options:
-      base: https://sru.k10plus.de/opac-de-1
-      recordSchema: picaxml
-      parser: picaxml
-  sbb-normdaten:
-    package: SRU
-    options:
-      base: https://sru.k10plus.de/opac-de-1!rec=2
+      base: http://sru.bsz-bw.de/swb-299
       recordSchema: picaxml
       parser: picaxml
   kxp:
@@ -27,6 +21,20 @@ importer:
       base: http://sru.k10plus.de/opac-de-627!rec=2
       recordSchema: picaxml
       parser: picaxml
+
+  sbb:
+    package: SRU
+    options:
+      base: https://sru.k10plus.de/opac-de-1
+      recordSchema: picaxml
+      parser: picaxml
+  sbb-normdaten:
+    package: SRU
+    options:
+      base: https://sru.k10plus.de/opac-de-1!rec=2
+      recordSchema: picaxml
+      parser: picaxml
+
 exporter:
   pp:
     package: PICA
@@ -37,4 +45,11 @@ exporter:
     options:
       line_delimited: 1
       
-
+coli-rich:
+  fields:
+    - '041A' # Schlagwortfolgen
+    - '044.' # Sacherschließung
+    - '045.' # Sacherschließung
+    - 144Z # Lokale Schlagwörter
+    - 145S # Lesesaalsystematik der SBB
+    - 145Z # Lokale Notationen

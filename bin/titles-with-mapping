@@ -1,0 +1,53 @@
+#!/usr/bin/env perl
+use v5.14.1;
+use Pod::Usage;
+use Getopt::Long;
+use PICA::Data ':all';
+use Catmandu -all;
+
+GetOptions( \my %opt, 'help|?', 'exist|e', 'count|c', 'path|p:s' ) || pod2usage(2);
+pod2usage(1) if $opt{help} or !@ARGV;
+
+$opt{path} //= join ",", @{Catmandu->config->{'coli-rich'}{fields}};
+
+my @fields = map { PICA::Path->new($_) } ('003@', split /[ ,|]/, $opt{path});
+
+for my $uri (@ARGV) {
+
+    $uri =~ qr{^https://coli-conc.gbv.de/api/mappings/[0-9a-f-]+$}
+      or ( error("invalid mapping URI: $uri") and next );
+
+    if ($opt{exist}) {
+        eval { importer( 'JSON', file => $_ )->next->{uri} } eq $uri
+            or ( error("Mapping does not exist: $_") and next );
+    }
+
+    my $cql = "pica.seq=\"" . ($uri =~ s/[\/:.-]+/ /gr) . '"';
+    if ($opt{count}) {
+        say importer('swb-299', query => $cql, parser => 'meta')->next->{numberOfRecords};
+    } else {
+        my $importer = importer('swb-299', query => $cql);
+        exporter('pp')->add_many($importer->map(sub { pica_fields(shift, @fields) }));
+    }
+}
+
+sub error { 
+    state $code;
+    warn "$_[0]\n" if @_; 
+    $code = 1 if @_; 
+    $code;
+}
+
+exit error;
+
+=head1 SYNOPSIS
+
+ titles-with-mappings [options] <mapping-uri...>
+
+ Options:
+   --help|-h        this help message
+   --exist|-e       check whether the mapping exists
+   --count|-c       only count number of titles
+   --path|-p        PICA+ Fields to filter (e.g. 045Q,045F)
+
+=cut
