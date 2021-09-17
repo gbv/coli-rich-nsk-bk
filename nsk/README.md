@@ -42,6 +42,10 @@ Anzahl unterschiedlicher Titeldatensätze:
 
 ### 4. Abfrage und Auswertung der Mappings sowie Ausgabe der Anreicherung
 
+Zur Analyse der Mappings kann das Script `mapping-status` genutzt werden:
+
+    $ ../bin/mapping-status nsk bk The
+
 Es werden zur Anreicherung alle Mapping vom Typ =, <, und ≈ berücksichtigt. Da die Konkordanz für die Fachgruppe `The` vollständig bis zur tiefsten Ebene ist (alle Klassen sind direkt gemappt), vereinfacht sich der Mappingprozess.
 
     $ ./anreicherung.pl < nsk-unique-titles.pica  > nsk-the-anreicherung.pica

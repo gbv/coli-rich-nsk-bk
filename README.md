@@ -26,7 +26,9 @@ Bei Korrekturen und Löschungen wird dem Feld ein `-` vorangestellt.
 
 ## Statistik und Korrekturen
 
-Zur Qualitätskontrolle lassen sich verschiedene Abfragen und Statistiken erstellen. Werden nachträglich Fehler erkannt so lässt sich die Anreicherung automatisch korrigieren oder verbessern. Dabei müssen zwei Fälle unterschieden werden:
+Zur Qualitätskontrolle lassen sich verschiedene Abfragen und Statistiken erstellen.
+
+Werden nachträglich Fehler erkannt so lässt sich die Anreicherung automatisch korrigieren oder verbessern. Dabei müssen zwei Fälle unterschieden werden:
 
 1. Korrektur der Anreicherung einzelner Titel
 
@@ -40,11 +42,15 @@ Zur Qualitätskontrolle lassen sich verschiedene Abfragen und Statistiken erstel
 
 ### enrich
 
-Das Skript `./bin/enrich` berechnet für PICA-Datensätze ...
+Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen (**TODO**)
 
 ### titles-with-mapping
 
 Das Skript `./bin/titles-with-mapping` fragt ab wie viele bzw. welche Titel im K10plus-Katalog auf Grundlage eines bestimmten Mappings oder einer Kombination von Vokabularen angerichert wurden.
+
+### mapping-status
+
+Das Skript `./bin/mapping-status` prüft ob und welche Mapping für eine Teilhierarchie eines Vokabulars vorhanden sind.
 
 ## stats
 

@@ -1,0 +1,186 @@
+#!/usr/bin/env perl
+use v5.14.1;
+use Pod::Usage;
+use Getopt::Long;
+use JSON::API;
+
+GetOptions( \my %opt, 'help|?' )
+  or pod2usage(2);
+pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
+  if $opt{help} or !@ARGV;
+
+pod2usage("missing scheme arguments") if @ARGV < 2;
+pod2usage("missing concept(s)")       if @ARGV < 3;
+
+my %schemes = (
+    NSK => {
+        notation => ["NSK"],
+        uri      => "http://bartoc.org/en/node/20298",
+        API      => "https://coli-conc.gbv.de/api/",
+    },
+    BK => {
+        notation => ["BK"],
+        uri      => "http://bartoc.org/en/node/18785",
+        API      => "http://api.dante.gbv.de/",
+    },
+    RVK => {
+        notation => ["RVK"],
+        uri      => "http://bartoc.org/en/node/533",
+        API      => "https://coli-conc.gbv.de/rvk/api/"
+    },
+);
+
+my %mappingTypes = (
+    close   => "≈",
+    exact   => "=",
+    narrow  => "<",
+    broad   => ">",
+    related => "~",
+);
+
+my ( $from, $to ) = map { $schemes{$_} or pod2usage("unknown scheme $_") }
+  map { uc $_ } splice @ARGV, 0, 2;
+my @queue = @ARGV;
+
+while (@queue) {
+    my $notation = shift @queue;
+
+    my $concept = getConcept(
+        $from,
+        notation   => $notation,
+        properties => "narrower,ancestors"
+    );
+    if ($concept) {
+
+        # if type < or type =: no narrower
+        # otherwise check narrower
+        my $mapped;
+        my @mappings = getMappings( $from, $to, $notation );
+
+        if (@mappings) {
+
+            for ( my $i = 0 ; $i < @mappings ; $i++ ) {
+                my $m = $mappings[$i];
+
+                $m->{type}[0] =~ /#([a-z]+)Match/;
+                my $type = $mappingTypes{$1};
+
+                my $notation = join ' ∧ ',
+                  map { $_->{notation}[0] } @{ $m->{to}{memberSet} };
+
+                my $target = getConcept(
+                    $to,
+                    notation   => $notation,
+                    properties => 'narrower'
+                );
+
+                # TODO: support configuration
+                if ( $target && !@{ $target->{narrower} } ) {
+                    $mapped = 1 if ( $type eq '<' or $type eq '=' );
+                }
+
+                status( $concept, $m, $mapped, $i );
+            }
+        }
+        else {
+            status($concept);
+        }
+
+        unless ($mapped) {
+            push @queue, map { $_->{notation}[0] } @{ $concept->{narrower} };
+        }
+    }
+}
+
+sub status {
+    my ( $concept, $mapping, $mapped, $etc ) = @_;
+
+    my $notation = $concept->{notation}[0];
+    my $depth    = scalar @{ $concept->{ancestors} };
+
+    if ($etc) {
+        print " " x 40;
+    }
+    else {
+        print(( " " x $depth )
+            . "$notation"
+              . ( " " x ( 40 - length $notation ) ) );
+    }
+
+    if ($mapping) {
+        my $to = join ' ∩ ',
+          map { $_->{notation}[0] } @{ $mapping->{to}{memberSet} };
+
+        $mapping->{type}[0] =~ /#([a-z]+)Match/;
+        my $type = $mappingTypes{$1};
+
+        print "$type $to";
+        print " ✓" if $mapped;
+    }
+
+    say "";
+}
+
+sub getMappings {
+    my ( $from, $to, $notation ) = @_;
+
+    # TODO: support configuration
+    my @types = (
+        'http://www.w3.org/2004/02/skos/core#exactMatch',
+        'http://www.w3.org/2004/02/skos/core#narrowMatch'
+    );
+
+    # TODO: get trusted mappings only (?)
+    my $api = JSON::API->new('http://coli-conc.gbv.de/api/mappings');
+    return @{
+        $api->get(
+            '',
+            {
+                from      => $notation,
+                fromSchme => $from->{uri},
+                toScheme  => $to->{uri},
+                type      => join '|',
+                @types,
+            }
+        )
+    };
+}
+
+sub getConcept {
+    my ( $voc, %query ) = @_;
+
+    die "missing notation" unless $query{notation} or $query{uri};
+
+    my $hash = join ' ', map { ( $_, $query{$_} ) } sort keys %query;
+
+    state %cache;
+    unless ( exists $cache{$hash} ) {
+
+        my $api = JSON::API->new( $voc->{API} );
+        my $res = $api->get( 'data', { voc => $voc->{uri}, %query } );
+        if ( $api->was_success && ref $res ) {
+            $cache{$hash} = $res->[0];
+        }
+        else {
+            $cache{$hash} = undef;
+            my $id = $query{notation} // $query{uri};
+            warn "unknown " . $voc->{notation}[0] . ": $id\n";
+        }
+    }
+
+    return $cache{$hash};
+}
+
+=head1 SYNOPSIS
+
+ mapping-status [options] <scheme> <scheme> <concept...>
+
+=head1 OPTIONS
+ 
+ --help|-h        this help message
+
+=head1 EXAMPLES
+
+ mapping-status nsk bk The
+
+=cut
