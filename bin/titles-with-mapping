@@ -16,7 +16,9 @@ my $concordance = qr{([a-z]+)[<>-]{1,2}([a-z])+}i;
 
 for my $mapping (@ARGV) {
 
-    if ($mapping =~ qr{^(coli-conc )?($concordance)$}i) {
+    if ($mapping eq "coli-conc") {
+        $mapping = "coli-conc.*";
+    } elsif ($mapping =~ qr{^(coli-conc )?($concordance)$}i) {
         $mapping = "coli-conc $2";
     } elsif ($mapping !~ qr{^https://coli-conc.gbv.de/api/mappings/[0-9a-f-]+$}) {
         error("invalid mapping URI or concordance: $mapping") and next;

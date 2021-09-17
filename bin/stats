@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+# enable cronjob with this script piped to stats.ndjson
+
+CONCORDANCES=(rvk-bk ddc-bk nsk-bk)
+
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+count() {
+  "$DIR"/titles-with-mapping -c $1
+}
+
+echo -n "{\"date\":\"$(date -I)\",\"total\":"$(count "coli-conc")
+for conc in "${CONCORDANCES[@]}"; do
+  echo -n ",\"$conc\":"$(count "$conc")
+done
+echo "}"

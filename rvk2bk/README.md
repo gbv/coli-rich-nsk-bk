@@ -89,8 +89,6 @@ Die Skripte in diesem Verzeichnis ermitteln Kataloganreicherung für den K10plus
   for X in {A..Z}; do for Y in {A..Z}; do ./download-by-rvk.sh $X$Y; done; done
   ~~~
 
-* `/count.sh` zählt per SRU Anzahl der Titeldatensätze die eine gegebene Anfrage erfüllen.
-
 * `rvkbk-mappings.sh` läd RVK-BK-Mappings vom Typ < oder = für eine gegebene RVK-Notation, mit Annotationen
 
 * `trusted-mappings.jq`: filtern Mappings denen für die Anreicherung vertraut werden kann
@@ -164,25 +162,4 @@ Das Skript `analysis.pl` durchläuft einen Teilbaum der RVK und ermittelt welche
 
 Für noch nicht gemappte Klassen wird die Klassenbenennung ausgegeben.
 
-## Statistik
-
-Mit dem Skript `count.sh` kann eine Anzahl von Datensätzen per SRU gezählt werden:
-
-Anzahl von Datensätzen, deren Sacherschließung mit Mappings angereichert wurde:
-
-    ./count.sh 'pica.seq=coli-conc.*'
-
-Anzahl von Datensätzen, deren Sacherschließung mit RVK-Mappings angereichert wurde:
-
-    ./count.sh 'pica.seq="coli-conc rvk.*"'
-
-Anzahl von Datensätzen, deren Sacherschließung mit RVK-BK-Mappings angereichert wurde:
-
-    ./count.sh 'pica.seq="coli-conc rvk bk"'
-
-Anzahl von Datensätzen, deren Sacherschließung mit einem bestimmten Mapping angreichert wurde
-(Achtung: Sonderzeichen durch Leerzeichen ersetzen!)
-Beispiel: Mapping <https://coli-conc.gbv.de/api/mappings/5812d5a4-4301-4677-9236-e6e3b8d68f24>:
-
-    ./count.sh 'pica.seq="https coli conc gbv de api mappings d415aba4-14c2-4a9c-822a-1a589787545d"'
 

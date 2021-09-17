@@ -38,11 +38,15 @@ Zur Qualitätskontrolle lassen sich verschiedene Abfragen und Statistiken erstel
 
 ## Dokumentation der einzelnen Skripte
 
+### enrich
+
+Das Skript `./bin/enrich` berechnet für PICA-Datensätze ...
+
 ### titles-with-mapping
 
 Das Skript `./bin/titles-with-mapping` fragt ab wie viele bzw. welche Titel im K10plus-Katalog auf Grundlage eines bestimmten Mappings oder einer Kombination von Vokabularen angerichert wurden.
 
-### enrich
+## stats
 
-Das Skript `./bin/enrich` berechnet für PICA-Datensätze ...
+Das Skript `./bin/stats` zählt die im K10plus vorhandenen Titel mit Anreicherungen und erzeugt daraus eine aktuelle Statistik, aufgeschlüsselt nach vorkonfigurierten Vokabular-Paaren. Das Skript sollte täglich per cronjob aufgerufen werden.
 
