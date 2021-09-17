@@ -12,17 +12,23 @@ $opt{path} //= join ",", @{Catmandu->config->{'coli-rich'}{fields}};
 
 my @fields = map { PICA::Path->new($_) } ('003@', split /[ ,|]/, $opt{path});
 
-for my $uri (@ARGV) {
+my $concordance = qr{([a-z]+)[<>-]{1,2}([a-z])+}i;
 
-    $uri =~ qr{^https://coli-conc.gbv.de/api/mappings/[0-9a-f-]+$}
-      or ( error("invalid mapping URI: $uri") and next );
+for my $mapping (@ARGV) {
+
+    if ($mapping =~ qr{^(coli-conc )?($concordance)$}i) {
+        $mapping = "coli-conc $2";
+    } elsif ($mapping !~ qr{^https://coli-conc.gbv.de/api/mappings/[0-9a-f-]+$}) {
+        error("invalid mapping URI or concordance: $mapping") and next;
+    }
 
     if ($opt{exist}) {
-        eval { importer( 'JSON', file => $_ )->next->{uri} } eq $uri
+        eval { importer( 'JSON', file => $_ )->next->{mapping} } eq $mapping
             or ( error("Mapping does not exist: $_") and next );
     }
 
-    my $cql = "pica.seq=\"" . ($uri =~ s/[\/:.-]+/ /gr) . '"';
+    my $cql = "pica.seq=\"" . ($mapping =~ s/[\/:.<>-]+/ /gr) . '"';
+
     if ($opt{count}) {
         say importer('swb-299', query => $cql, parser => 'meta')->next->{numberOfRecords};
     } else {
@@ -42,12 +48,20 @@ exit error;
 
 =head1 SYNOPSIS
 
- titles-with-mappings [options] <mapping-uri...>
+ titles-with-mappings [options] <mapping-uri|concordance...>
 
  Options:
    --help|-h        this help message
-   --exist|-e       check whether the mapping exists
+   --exist|-e       first check whether the mapping exists
    --count|-c       only count number of titles
-   --path|-p        PICA+ Fields to filter (e.g. 045Q,045F)
+   --path|-p        PICA+ path expressions to filter fields (e.g. 045Q,045F)
+
+ Examples:
+
+  # get PPN fields of all titles enriched with a specific mapping
+  titles-with-mappings -p 003@ https://coli-conc.gbv.de/api/mappings/d415aba4-14c2-4a9c-822a-1a589787545d 
+
+  # count titles enriched with RVK-BK mappings
+  titles-with-mappings -c rvk-bk    
 
 =cut
