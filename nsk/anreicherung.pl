@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 use v5.14.1;
-use Catmandu ':all';
+use Catmandu -all, -load => ['../'];
 use PICA::Data ':all';
 use List::Util qw(uniq);
 use JSON::API;
