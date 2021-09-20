@@ -3,8 +3,10 @@ use v5.14.1;
 use Pod::Usage;
 use Getopt::Long;
 use JSON::API;
+use Catmandu;
+use List::Util qw(any);
 
-GetOptions( \my %opt, 'help|?', 'language|l=s' )
+GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s' )
   or pod2usage(2);
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
@@ -28,15 +30,26 @@ my %schemes = (
         uri      => "http://uri.gbv.de/terminology/rvk/",
         API      => "https://coli-conc.gbv.de/rvk/api/"
     },
+    DDC => {
+        notation => ["DDC"],
+        uri      => "http://bartoc.org/en/node/241",
+        API      => "https://coli-conc.gbv.de/api/"
+    }
 );
 
 my %mappingTypes = (
-    close   => "≈",
-    exact   => "=",
-    narrow  => "<",
-    broad   => ">",
-    related => "~",
+    'http://www.w3.org/2004/02/skos/core#closeMatch'      => "≈",
+    'http://www.w3.org/2004/02/skos/core#exactMatch'      => "=",
+    'http://www.w3.org/2004/02/skos/core#narrowMatch'     => "<",
+    'http://www.w3.org/2004/02/skos/core#broadMatch'      => ">",
+    'http://www.w3.org/2004/02/skos/core#relatedMatch'    => "~",
+    'http://www.w3.org/2004/02/skos/core#mappingRelation' => '→',
 );
+
+my $defaultTrust = { type => [ 'exactMatch', 'narrowMatch' ] };
+
+my $trust =
+  $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : undef;
 
 my ( $from, $to ) = map { $schemes{$_} or pod2usage("unknown scheme $_") }
   map { uc $_ } splice @ARGV, 0, 2;
@@ -55,15 +68,12 @@ while (@queue) {
         # if type < or type =: no narrower
         # otherwise check narrower
         my $mapped;
-        my @mappings = getMappings( $from, $to, $notation );
+        my @mappings = getMappings( $from, $to, $notation, $trust );
 
         if (@mappings) {
 
             for ( my $i = 0 ; $i < @mappings ; $i++ ) {
                 my $m = $mappings[$i];
-
-                $m->{type}[0] =~ /#([a-z]+)Match/;
-                my $type = $mappingTypes{$1};
 
                 my $notation = join ' ∧ ',
                   map { $_->{notation}[0] } @{ $m->{to}{memberSet} };
@@ -74,10 +84,7 @@ while (@queue) {
                     properties => 'narrower'
                 );
 
-                # TODO: support configuration
-                if ( $target && !@{ $target->{narrower} } ) {
-                    $mapped = 1 if ( $type eq '<' or $type eq '=' );
-                }
+                $mapped = 1 if $target && !@{ $target->{narrower} };
 
                 status( $concept, $m, $mapped, $i );
             }
@@ -97,26 +104,27 @@ sub status {
 
     my $notation = $concept->{notation}[0];
     my $depth    = scalar @{ $concept->{ancestors} };
+    my $width    = 50;
 
     if ($etc) {
-        print " " x 40;
+        print " " x $width;
     }
     else {
-        print(( " " x $depth )
-            . "$notation"
-              . ( " " x ( 40 - length $notation ) ) );
+        $width = $width - $depth;
+        print " " x $depth;
+        printf "%-${width}s", $notation;
     }
 
     if ($mapping) {
         my $to = join ' ∩ ',
           map { $_->{notation}[0] } @{ $mapping->{to}{memberSet} };
 
-        $mapping->{type}[0] =~ /#([a-z]+)Match/;
-        my $type = $mappingTypes{$1};
+        my $type = $mappingTypes{ ( $mapping->{type} || [] )->[0] } || '→ ';
 
         print "$type $to";
         print " ✓" if $mapped;
-    } elsif( my $lang = $opt{language} ) {
+    }
+    elsif ( my $lang = $opt{language} ) {
         print $concept->{prefLabel}{$lang};
     }
 
@@ -124,28 +132,49 @@ sub status {
 }
 
 sub getMappings {
-    my ( $from, $to, $notation ) = @_;
+    my ( $from, $to, $notation, $trust ) = @_;
 
-    # TODO: support configuration
-    my @types = (
-        'http://www.w3.org/2004/02/skos/core#exactMatch',
-        'http://www.w3.org/2004/02/skos/core#narrowMatch'
+    my @types = map { "http://www.w3.org/2004/02/skos/core#$_" }
+      @{ $trust->{type} || $defaultTrust->{type} };
+
+    my $api      = JSON::API->new('http://coli-conc.gbv.de/api/mappings');
+    my $mappings = $api->get(
+        '',
+        {
+            from       => $notation,
+            fromSchme  => $from->{uri},
+            toScheme   => $to->{uri},
+            properties => 'annotations,creator',
+            type       => join( '|', @types ),
+        }
     );
 
-    # TODO: get trusted mappings only (?)
-    my $api = JSON::API->new('http://coli-conc.gbv.de/api/mappings');
-    return @{
-        $api->get(
-            '',
-            {
-                from      => $notation,
-                fromSchme => $from->{uri},
-                toScheme  => $to->{uri},
-                type      => join '|',
-                @types,
-            }
-        )
-    };
+    return grep { trusted( $_, $trust ) } @$mappings;
+}
+
+# TODO: this should be moved to a library
+sub trusted {
+    my ( $mapping, $trust ) = @_;
+
+    my $ann = $mapping->{annotations} || [];
+    my %account = map { ($_ => 1) } @{$trust->{account} || []};
+
+    # trust all confirmed mappings
+    return 1 if any { $_->{motivation} eq 'moderating' } @$ann;
+
+    # don't trust downvoted mappings
+    # (TODO: only if downvoted by known account)
+    return 0
+      if any { $_->{motivation} eq 'assessing' and $_->{bodyValue} eq "-1" }
+    @$ann;
+
+    if (%account) {
+        # trust mappings by known accounts
+        return any { $account{$_->{uri}} } @{$mapping->{creator}||[]};
+    } else {
+        # trust all mappings
+        return 1;
+    }
 }
 
 sub getConcept {
@@ -179,12 +208,14 @@ sub getConcept {
 
 =head1 OPTIONS
  
- --help|-h        this help message
- --language|-l    include label in given language if concept not mapped
+ --help|-h       this help message
+ --language|-l   include label in given language if concept not mapped
+ --trust|-t      YAML file to load trust rules from
 
 =head1 EXAMPLES
 
  mapping-status nsk bk The -l en
  mapping-status rvk bk WE -l de
+ mapping-status rvk bk WE -l de -t trusted-rvk.yaml
 
 =cut
