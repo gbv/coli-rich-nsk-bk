@@ -6,7 +6,7 @@ use JSON::API;
 use Catmandu;
 use List::Util qw(any);
 
-GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s' )
+GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s', 'depth|d=i' )
   or pod2usage(2);
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
@@ -49,11 +49,13 @@ my %mappingTypes = (
 my $defaultTrust = { type => [ 'exactMatch', 'narrowMatch' ] };
 
 my $trust =
-  $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : undef;
+  $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : {};
 
 my ( $from, $to ) = map { $schemes{$_} or pod2usage("unknown scheme $_") }
   map { uc $_ } splice @ARGV, 0, 2;
 my @queue = @ARGV;
+
+my $startDepth = -1;
 
 while (@queue) {
     my $notation = shift @queue;
@@ -64,9 +66,9 @@ while (@queue) {
         properties => "narrower,ancestors"
     );
     if ($concept) {
+        my $depth = scalar @{ $concept->{ancestors} || [] };
+        $startDepth = $depth if $startDepth == -1;
 
-        # if type < or type =: no narrower
-        # otherwise check narrower
         my $mapped;
         my @mappings = getMappings( $from, $to, $notation, $trust );
 
@@ -94,7 +96,12 @@ while (@queue) {
         }
 
         unless ($mapped) {
-            push @queue, map { $_->{notation}[0] } @{ $concept->{narrower} };
+
+            # TODO: traverse anyway if required to do so
+
+            next if $opt{depth} && $depth - $startDepth + 1 >= $opt{depth};
+            push @queue,
+              sort map { $_->{notation}[0] } @{ $concept->{narrower} };
         }
     }
 }
@@ -103,7 +110,7 @@ sub status {
     my ( $concept, $mapping, $mapped, $etc ) = @_;
 
     my $notation = $concept->{notation}[0];
-    my $depth    = scalar @{ $concept->{ancestors} };
+    my $depth    = scalar @{ $concept->{ancestors} } - $startDepth;
     my $width    = 50;
 
     if ($etc) {
@@ -157,7 +164,7 @@ sub trusted {
     my ( $mapping, $trust ) = @_;
 
     my $ann = $mapping->{annotations} || [];
-    my %account = map { ($_ => 1) } @{$trust->{account} || []};
+    my %account = map { ( $_ => 1 ) } @{ $trust->{account} || [] };
 
     # trust all confirmed mappings
     return 1 if any { $_->{motivation} eq 'moderating' } @$ann;
@@ -169,9 +176,11 @@ sub trusted {
     @$ann;
 
     if (%account) {
+
         # trust mappings by known accounts
-        return any { $account{$_->{uri}} } @{$mapping->{creator}||[]};
-    } else {
+        return any { $account{ $_->{uri} } } @{ $mapping->{creator} || [] };
+    }
+    else {
         # trust all mappings
         return 1;
     }
@@ -210,12 +219,13 @@ sub getConcept {
  
  --help|-h       this help message
  --language|-l   include label in given language if concept not mapped
+ --depth|-d      maximum depth to traverse to with first concept at 1
  --trust|-t      YAML file to load trust rules from
 
 =head1 EXAMPLES
 
  mapping-status nsk bk The -l en
- mapping-status rvk bk WE -l de
+ mapping-status ddc bk 949 -l de -d 2
  mapping-status rvk bk WE -l de -t trusted-rvk.yaml
 
 =cut
