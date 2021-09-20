@@ -4,7 +4,7 @@ use Pod::Usage;
 use Getopt::Long;
 use JSON::API;
 
-GetOptions( \my %opt, 'help|?' )
+GetOptions( \my %opt, 'help|?', 'language|l=s' )
   or pod2usage(2);
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
@@ -25,7 +25,7 @@ my %schemes = (
     },
     RVK => {
         notation => ["RVK"],
-        uri      => "http://bartoc.org/en/node/533",
+        uri      => "http://uri.gbv.de/terminology/rvk/",
         API      => "https://coli-conc.gbv.de/rvk/api/"
     },
 );
@@ -116,6 +116,8 @@ sub status {
 
         print "$type $to";
         print " ✓" if $mapped;
+    } elsif( my $lang = $opt{language} ) {
+        print $concept->{prefLabel}{$lang};
     }
 
     say "";
@@ -178,9 +180,11 @@ sub getConcept {
 =head1 OPTIONS
  
  --help|-h        this help message
+ --language|-l    include label in given language if concept not mapped
 
 =head1 EXAMPLES
 
- mapping-status nsk bk The
+ mapping-status nsk bk The -l en
+ mapping-status rvk bk WE -l de
 
 =cut

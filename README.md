@@ -50,7 +50,7 @@ Das Skript `./bin/titles-with-mapping` fragt ab wie viele bzw. welche Titel im K
 
 ### mapping-status
 
-Das Skript `./bin/mapping-status` prüft ob und welche Mapping für eine Teilhierarchie eines Vokabulars vorhanden sind.
+Das Skript `./bin/mapping-status` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden. 
 
 ## stats
 
