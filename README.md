@@ -95,11 +95,15 @@ Benötigt wird Bash, jq und Perl mit Catmandu. Die Datei `cpanfile` enthält all
 
 Die Datei `catmandu.yaml` enthält die Konfiguration für Catmandu.
 
-Darüber hinaus kann es je Unterverzeichnis eine Konfiguration zur Auswahl von Mappings geben (*TODO: genauer Beschreiben*)
+Darüber hinaus kann es je Unterverzeichnis eine Konfiguration zur Auswahl von Mappings geben.
+
+*TODO: Die Konfiguration der Mapping-Auswahl muss noch genauer beschrieben werden*
 
 ### enrich
 
-Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen (**TODO**)
+Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen.
+
+*TODO: Das Skript wird derzeit überarbeitet*
 
 ### mapping-status
 

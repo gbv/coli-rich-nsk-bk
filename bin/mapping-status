@@ -11,8 +11,8 @@ GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s', 'depth|d=i' )
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
 
-pod2usage("missing scheme arguments") if @ARGV < 2;
-pod2usage("missing concept(s)")       if @ARGV < 3;
+pod2usage("missing schemes argument") if @ARGV < 1;
+pod2usage("missing concept(s)")       if @ARGV < 2;
 
 my %schemes = (
     NSK => {
@@ -52,7 +52,7 @@ my $trust =
   $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : {};
 
 my ( $from, $to ) = map { $schemes{$_} or pod2usage("unknown scheme $_") }
-  map { uc $_ } splice @ARGV, 0, 2;
+  map { uc $_ } split /-/, shift @ARGV;
 my @queue = @ARGV;
 
 my $startDepth = -1;
@@ -224,8 +224,8 @@ sub getConcept {
 
 =head1 EXAMPLES
 
- mapping-status nsk bk The -l en
- mapping-status ddc bk 949 -l de -d 2
- mapping-status rvk bk WE -l de -t trusted-rvk.yaml
+ mapping-status nsk-bk The -l en
+ mapping-status ddc-bk 949 -l de -d 2
+ mapping-status rvk-bk WE -l de -t trusted-rvk.yaml
 
 =cut
