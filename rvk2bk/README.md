@@ -2,23 +2,9 @@
 
 Im Rahmen des Projekt [coli-conc](https://coli-conc.gbv.de/) werden Mappings zwischen Klassen der Regensburger Verbundklassifikation (RVK) und Klassen der Basisklassifikation (BK) gesammelt, erstellt und kontrolliert (siehe [RVK-BK-Mappings in der Konkordanzdatenbank](https://coli-conc.gbv.de/cocoda/app/?toScheme=http%3A%2F%2Furi.gbv.de%2Fterminology%2Fbk%2F&fromScheme=http%3A%2F%2Furi.gbv.de%2Fterminology%2Frvk%2F&search=%7B%22fromScheme%22%3A%22RVK%22%2C%22toScheme%22%3A%22BK%22%7D)). Auf Grundlage dieser Mappings können Titeldatensätze im K10plus-Katalog um fehlende BK-Notationen ergänzt werden. Diese Anreicherung läuft unter dem Projektnamen **coli-rich**.
 
-## Übersicht
+**Siehe auch die [Allgemeine Beschreibung von coli-rich](../README.md)**
 
-Zur Anreicherung erfolgt in fünf Schritten:
-
-1. [Erstellung von Mappings](#1-erstellung-von-mappings)
-2. [Auswahl der für die Anreicherung in Frage kommenden Mappings](#2-auswahl-von-mappings)
-3. [Auswahl der anzureichernden Titeldatensätze](#3-auswahl-von-titeldatensätzen)
-4. Ermittlung der Anreicherung
-5. Eintragung der Anreicherung im K10plus
-
-Für den Produktivbetrieb werden Schritt 3 bis 5 dauerhaft und automatisch ablaufen.
-
-### 1. Erstellung von Mappings
-
-Zur Erstellung von Mappings dient die [Webanwendung Cocoda](https://coli-conc.gbv.de/cocoda/app/). Mappings können von allen Interessierten erstellt und per Benutzerinterface und APIs abgefragt werden. Jedes Mapping ist einem Benutzeraccount zugeordnet.
-
-### 2. Auswahl von Mappings
+## Auswahl von Mappings
 
 Die Auswahl der für das Mapping in Frage kommenden Mappings basiert auf zwei Kritierien:
 
@@ -35,7 +21,7 @@ Die Auswahl der für das Mapping in Frage kommenden Mappings basiert auf zwei Kr
 
 Geplant is noch eine zusätzliche Konsistenzprüfung, nach der die ausgewählten Mappings in sich widerspruchsfrei sein müssen. So sollte beispielsweise eine RVK-Unterklasse nicht auf eine umfassendere BK-Klasse gemappt sein als ihre Oberklasse.
 
-### 3. Auswahl von Titeldatensätzen
+## Auswahl von Titeldatensätzen
 
 In der Pilotphase werden alle Titeldatensätze im K10plus ausgewählt, die mit RVK aber nicht mit BK erschlossen sind. Dabei gibt es zwei Möglichkeiten:
 
@@ -45,7 +31,7 @@ In der Pilotphase werden alle Titeldatensätze im K10plus ausgewählt, die mit R
 
 Im Produktivbetrieb soll das Verfahren erweitert werden um vorhandene BK-Notationen zu überprüfen und um angereicherte BK-Notationen anzupassen wenn die ausgewählten Mappings geändert haben.
 
-### 4. Ermittlung der Anreicherung
+## Ermittlung der Anreicherung
 
 Nach Auswahl von Mappings und Titeldatensätzen können Datensätze mit einer RVK-Klasse α folgendermaßen um BK-Klassen angereichert werden:
 
@@ -53,27 +39,6 @@ Nach Auswahl von Mappings und Titeldatensätzen können Datensätze mit einer RV
 
 * Gibt es stattdessen eine (ggf. transitive) Oberklasse γ von α mit einem Mapping γ = β oder γ < β dann passt ebenfalls die BK-Klasse β.
   Allerdings kann es sein, dass eine Unterklassen von β noch besser passen würde.
-
-Die ermittelten Anreicherungen werden im [PICA Änderungsformat](https://pro4bib.github.io/pica/#/formate?id=%c3%84nderungsformat) zur Eintragung in den K10plus weitergegeben. Jede Anreicherung ist ein PICA-Feld `045Q/01` mit vier Unterfeldern:
-
-* `$9` PPN des BK-Normdatensatzes
-* `$a` BK-Notation
-* `$A` Die Zeichenkette "`coli-conc RVK->BK`"
-* `$A` Die URI des Mappings auf dessen Grundlage die Anreicherung ermittelt wurde
-
-### 5. Eintragung der Anreicherung im K10plus
-
-Die durch Anreicherung ermittelten Änderungen werden gesammelt und in Batches von einigen Tausend Änderungen in den K10plus eingetragen. Im Produktivbetrieb soll die Eintragung täglich oder mindestens wöchentlich erfolgen, so dass neu erstellte Mappings zeitnah zu Anreicherungen im K10plus führen. Je nach Anzahl der Datensätze ist auch eine Eintragung innerhalb von Minuten denkbar.
-
-## Technische Umsetzung
-
-Die Skripte in diesem Verzeichnis ermitteln Kataloganreicherung für den K10plus um fehlende BK-Notationen auf Grundlage vorhandener RVK-Notationen. Es handelt sich um eine erste Version in Perl, die später durch eine Neuimplementierung in JavaScript abgelöst werden soll.
-
-### Installation und Konfiguration
-
-* `cpanfile` Perl-Dependencies (`cpanm --installdeps .`)
-
-* `catmandu.yaml` Konfigurationsdatei
 
 ## Skripte
 
@@ -116,6 +81,3 @@ Klassen der RVK, die per exactMatch auf eine beliebige BK-Klasse gemappt sind:
 * `ET 500` Lexikologie
 * `ST 240 - ST 250` Programmiersprachen (derzeit nicht unterstützt, da Unterklassen relevant)
 
-## Auswertung auf Vollständigkeit
-
-Siehe Skript `mapping-status'.
