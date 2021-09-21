@@ -45,7 +45,7 @@ Die Anreicherung der Sacherschließung erfolgt immer für einzelne Titeldatensä
 
 #### Auswahl von Mappings
 
-...
+Siehe Skript [mapping-status](#mapping-status).
 
 #### Berechung der Anreicherung
 
