@@ -91,6 +91,8 @@ Werden nachträglich Fehler erkannt so lässt sich die Anreicherung automatisch 
 
 Benötigt wird Bash, jq und Perl mit Catmandu. Die Datei `cpanfile` enthält alle Perl-Dependencies (`cpanm --installdeps .`).
 
+*TODO: Teile des Verfahren sollen auf JavaScript umgestellt werden, damit sie auch direkt in Cocoda eingesetzt werden können.*
+
 ### Konfiguration
 
 Die Datei `catmandu.yaml` enthält die Konfiguration für Catmandu.
@@ -107,7 +109,46 @@ Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen.
 
 ### mapping-status
 
-Das Skript `./bin/mapping-status` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden. 
+Das Skript `./bin/mapping-status` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden. Beispiel:
+
+~~~
+$ ./bin/mapping-status nsk-bk The -l en
+The                                               = 11
+ The A                                            Allgemeines, Kirchengeschichte, Systematische Theologie
+  The A 100                                       ?
+  The A 1100                                      < 11.50 ✓
+  The A 1300                                      < 11.54 ∩ 11.50 ✓
+  The A 1600                                      < 11.55 ✓
+  The A 1700                                      < 11.55 ✓
+  The A 200                                       < 11.51 ✓
+  The A 2000                                      < 11.50 ✓
+  The A 300                                       < 11.61 ✓
+  The A 500                                       = 11.62 ✓
+  The A 700                                       < 11.50 ✓
+  The A 800                                       Papsttum, Kirchenstaat
+  The A 900                                       < 11.69 ✓
+ The B                                            = 11.70
+  The B 100                                       ?
+  The B 200                                       = 11.74 ✓
+  The B 300                                       = 11.75 ✓
+  The B 400                                       = 11.71 ✓
+  The B 600                                       Katechetik
+  The B 700                                       Mission
+  The B 800                                       < 11.79 ✓
+ The C                                            = 11.30
+  The C 100                                       = 11.38 ✓
+  The C 200                                       = 11.44 ✓
+ The E                                            Einzelne christliche Konfessionen, Symbolik
+  The E 100                                       Katholische Kirche
+  The E 1900                                      < 11.55 ✓
+  The E 200                                       < 11.54 ✓
+  The E 2000                                      Protestantische Kirchen
+  The E 2200                                      < 11.55 ✓
+  The E 300                                       < 11.57 ✓
+  The E 400                                       < 11.57 ✓
+  The E 500                                       < 11.57 ✓
+  The E 800                                       < 11.57 ✓
+~~~
 
 ### titles-with-mapping
 

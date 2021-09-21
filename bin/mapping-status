@@ -4,7 +4,11 @@ use Pod::Usage;
 use Getopt::Long;
 use JSON::API;
 use Catmandu;
-use List::Util qw(any);
+
+use Cwd qw(abs_path);
+use FindBin;
+use lib abs_path("$FindBin::Bin/../lib");
+use ColiRich;
 
 GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s', 'depth|d=i' )
   or pod2usage(2);
@@ -46,8 +50,6 @@ my %mappingTypes = (
     'http://www.w3.org/2004/02/skos/core#mappingRelation' => '→',
 );
 
-my $defaultTrust = { type => [ 'exactMatch', 'narrowMatch' ] };
-
 my $trust =
   $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : {};
 
@@ -68,12 +70,15 @@ while (@queue) {
     if ($concept) {
         my $depth = scalar @{ $concept->{ancestors} || [] };
         $startDepth = $depth if $startDepth == -1;
+        
+        my $children = $concept->{narrower};
+        $children = undef if $children && !$children->[0];
 
         my $mapped;
         my @mappings = getMappings( $from, $to, $notation, $trust );
 
         if (@mappings) {
-
+            
             for ( my $i = 0 ; $i < @mappings ; $i++ ) {
                 my $m = $mappings[$i];
 
@@ -86,7 +91,8 @@ while (@queue) {
                     properties => 'narrower'
                 );
 
-                $mapped = 1 if $target && !@{ $target->{narrower} };
+                my $leaf = !$target->{narrower} || !@{$target->{narrower}};
+                $mapped = 1 if $target && !( $children && !$leaf );
 
                 status( $concept, $m, $mapped, $i );
             }
@@ -100,8 +106,8 @@ while (@queue) {
             # TODO: traverse anyway if required to do so
 
             next if $opt{depth} && $depth - $startDepth + 1 >= $opt{depth};
-            push @queue,
-              sort map { $_->{notation}[0] } @{ $concept->{narrower} };
+            next unless $children;
+            push @queue, sort map { $_->{notation}[0] } @$children;
         }
     }
 }
@@ -136,79 +142,6 @@ sub status {
     }
 
     say "";
-}
-
-sub getMappings {
-    my ( $from, $to, $notation, $trust ) = @_;
-
-    my @types = map { "http://www.w3.org/2004/02/skos/core#$_" }
-      @{ $trust->{type} || $defaultTrust->{type} };
-
-    my $api      = JSON::API->new('http://coli-conc.gbv.de/api/mappings');
-    my $mappings = $api->get(
-        '',
-        {
-            from       => $notation,
-            fromSchme  => $from->{uri},
-            toScheme   => $to->{uri},
-            properties => 'annotations,creator',
-            type       => join( '|', @types ),
-        }
-    );
-
-    return grep { trusted( $_, $trust ) } @$mappings;
-}
-
-# TODO: this should be moved to a library
-sub trusted {
-    my ( $mapping, $trust ) = @_;
-
-    my $ann = $mapping->{annotations} || [];
-    my %account = map { ( $_ => 1 ) } @{ $trust->{account} || [] };
-
-    # trust all confirmed mappings
-    return 1 if any { $_->{motivation} eq 'moderating' } @$ann;
-
-    # don't trust downvoted mappings
-    # (TODO: only if downvoted by known account)
-    return 0
-      if any { $_->{motivation} eq 'assessing' and $_->{bodyValue} eq "-1" }
-    @$ann;
-
-    if (%account) {
-
-        # trust mappings by known accounts
-        return any { $account{ $_->{uri} } } @{ $mapping->{creator} || [] };
-    }
-    else {
-        # trust all mappings
-        return 1;
-    }
-}
-
-sub getConcept {
-    my ( $voc, %query ) = @_;
-
-    die "missing notation" unless $query{notation} or $query{uri};
-
-    my $hash = join ' ', map { ( $_, $query{$_} ) } sort keys %query;
-
-    state %cache;
-    unless ( exists $cache{$hash} ) {
-
-        my $api = JSON::API->new( $voc->{API} );
-        my $res = $api->get( 'data', { voc => $voc->{uri}, %query } );
-        if ( $api->was_success && ref $res ) {
-            $cache{$hash} = $res->[0];
-        }
-        else {
-            $cache{$hash} = undef;
-            my $id = $query{notation} // $query{uri};
-            warn "unknown " . $voc->{notation}[0] . ": $id\n";
-        }
-    }
-
-    return $cache{$hash};
 }
 
 =head1 SYNOPSIS

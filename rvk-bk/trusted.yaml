@@ -2,8 +2,8 @@
 type:
   - exactMatch
   - narrowMatch
-  - mappingRelation # unspecified
 
+# Alle Mappings dieser Accounts sind OK (außer wenn downgevoted).
 account:
   # Jakob
   - "https://coli-conc.gbv.de/login/users/3a1bb23f-8d60-4b7a-8bec-cc419d7f6ab6"
@@ -21,3 +21,10 @@ account:
   # Stefan
   - "https://github.com/stefandesu"
 
+
+# Alle Mappings dieser Konkordanzen sind ebenfalls OK (außer wenn downgevoted).
+# Einzelne Konfiguration pro Konkordanz ist möglich
+concordance:
+  http://coli-conc.gbv.de/concordances/rvk_bk_recht: 
+    type:
+      - mappingRelation
