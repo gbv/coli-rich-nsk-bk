@@ -5,12 +5,11 @@ Dieses Repository enthält Skripte zur Anreicherung der Sacherschließung im K10
 ## Inhalt
 
 * [Ablauf der Anreicherung](#ablauf-der-anreicherung)
-  * [Erstellung und Pflege von Mappings](#erstellung-und-pflege-von-mappings)
-  * [Ermittlung der Anreicherung](#ermittlung-der-anreicherung)
-    * [Auswahl von Titeldatensätzen](#auswahl-von-titeldatensätzen)
-    * [Auswahl von Mappings](#auswahl-von-mappings)
-    * [Berechnung der Anreicherung](#berechnung-der-anreicherung)
-  * [Eintragung in den K10plus-Katalog](#eintragung-in-den-k10plus-katalog)
+  * [Erstellung und Bewertung von Mappings](#erstellung-und-bewertung-von-mappings)
+  * [Auswahl von Mappings](#auswahl-von-mappings)
+  * [Auswahl von Titeldatensätzen](#auswahl-von-titeldatensätzen)
+  * [Berechnung der Anreicherung](#berechnung-der-anreicherung)
+  * [Eintragung in den Katalog](#eintragung-in-den-katalog)
   * [Statistik und Korrekturen](#statistik-und-korrekturen)
 * [Technische Umsetzung](#technische-umsetzung)
   * [Installation](#installation)
@@ -21,39 +20,58 @@ Dieses Repository enthält Skripte zur Anreicherung der Sacherschließung im K10
 
 ## Ablauf der Anreicherung
 
-Zur Anreicherung erfolgt in fünf Schritten:
+Das gesamte Verfahren erfordert fünf Arbeitsschritte:
 
-1. [Erstellung und Pflege von Mappings](#erstellung-und-pflege-von-mappings)
-2. [Auswahl von Titeldatensätzen](#auswahl-von-titeldatensätzen)
-3. [Auswahl von Mappings](#auswahl-von-mappings)
+1. [Erstellung und Bewertung von Mappings](#erstellung-und-bewertung-von-mappings)
+2. [Auswahl von Mappings](#auswahl-von-mappings)
+3. [Auswahl von Titeldatensätzen](#auswahl-von-titeldatensätzen)
 4. [Berechnung der Anreicherung](#berechnung-der-anreicherung)
-5. [Eintragung in den K10plus-Katalog](#eintragung-in-den-k10plus-katalog)
+5. [Eintragung in den Katalog](#eintragung-in-den-katalog)
 
-Für den Produktivbetrieb sollen alle Schritte bis auf die Erstellung und Pflege dauerhaft und automatisch ablaufen.
+Für den Produktivbetrieb sollen alle Schritte bis auf die Erstellung und Bewertung von Mappings dauerhaft und automatisch ablaufen. Zur Qualitätssicherung und strategischen Steuerung der Anreicherung gibt es zudem Verfahren für [Statistik und Korrekturen](#statistik-und-korrekturen).
 
-Zur Qualitätssicherung und strategischen Steuerung der Anreicherung gibt es Verfahren für [Statistik und Korrekturen](#statistik-und-korrekturen).
+~~~
++-------------+    .---------------.
+| Vokabulare  |   | Konfiguration  |-----------------> 3: Auswahl von
++-----+-------+    '---------------'                   Titeldatensätzen
+      |        \      | 2: Auswahl von             .----------------------.
+      v         v     v Mappings                   v                       \
+  .--------.     +-----------------+    .-----------------.                 +---------+
+  | Cocoda |     | Mappingtabelle  |--->| 4: Anreicherung |---------------->| Katalog |             
+  '---+----'     +-----------------+    '-----------------' 5: Eintragung   +---------+
+      | 1: Erstellung    ^
+      v und Bewertung   / 
+ +----------+          /
+ | Mappings |---------'
+ +----------+
+~~~
 
-### Erstellung und Pflege von Mappings
+<!-- SVG via https://ivanceras.github.io/svgbob-editor/ -->
 
-Zur Erstellung und Pflege von Mappings dient die [Webanwendung Cocoda](https://coli-conc.gbv.de/cocoda/app/). Mappings können von allen Interessierten in eine zentrale Mappingdatenbank eingestellt und per Benutzerinterface und APIs abgefragt werden. Jedes Mapping ist einem Benutzeraccount zugeordnet. Einige Mappings sind zudem einer Konkordanz zugeordnet (*[bisher nur Eingeschränkt möglich](https://github.com/gbv/jskos-server/issues/98)*). Mappings können zudem durch Upvote/Downvote und von ausgewählten Benutzeraccounts durch Bestätigung markiert werden.
+### Erstellung und Bewertung von Mappings
 
-### Ermittlung der Anreicherung
+Zur Erstellung und Bewertung von Mappings dient die [Webanwendung Cocoda](https://coli-conc.gbv.de/cocoda/app/). Mappings können von allen Interessierten in eine zentrale Mappingdatenbank eingestellt und per Benutzerinterface und APIs abgefragt werden. Jedes Mapping ist einem Benutzeraccount zugeordnet. Einige Mappings sind zudem einer Konkordanz zugeordnet (*[bisher nur Eingeschränkt möglich](https://github.com/gbv/jskos-server/issues/98)*). Mappings können zudem durch Upvote/Downvote und von ausgewählten Benutzeraccounts und durch Bestätigung bewertet werden.
 
-#### Auswahl von Titeldatensätzen
+### Auswahl von Mappings
+
+Das Skript [mapping-status](#mapping-status) wertet die (Teil)hierarchie eines Quellvokabulars und vorhandene Mappings auf ein Zielvokabular aus und berechnet daraus eine Mapping-Tabelle.
+
+Die Auswahl wird gesteuert davon, unter welchen Bedingungen Mappings als für die Anreicherung nutzbar gelten. Standardmäßig gilt dies wenn:
+
+* Ein Mapping vom Typ exact (=) oder narrower (<) ist und
+* Ein Mapping bestätigt wurde, oder
+* Ein Mapping von ausgewählten Accounts erstellt und nicht downgevoted wurde, oder
+* Ein Mapping Teil von ausgewählten Konkordanzen ist und nicht downgevoted wurde
+
+Diese Auswahl lässt sich in Zukunft pro Vokabular und Konkordanz konfigurieren.
+
+### Auswahl von Titeldatensätzen
 
 Die Anreicherung der Sacherschließung erfolgt immer für einzelne Titeldatensätze im K10plus-Katalog. Die Auswahl, welche Datensätze angereichert werden sollen ist also unabhängig von der Anreicherung. Es macht allerdings Sinn möglichst vollständige (Teil-)Konkordanzen zu erstellen und dann alle Titel anzureichern, die mit Normdaten aus dem gemappten Teilbereich des Quellvokabulars erschlossen sind. Die Auswahl von anzureichernden Titeln erfolgt per SRU-Abfrage oder per PPN-Liste. Für den Produktivbetrieb muss noch ein Verfahren entwickelt werden, dass ausgehend von Änderungen an Titeln und Mappings die vorhandene Anreicherung regelmäßig überprüft und ergänzt bzw. korrigiert.
 
-#### Auswahl von Mappings
+### Berechung der Anreicherung
 
-Siehe Skript [mapping-status](#mapping-status).
-
-#### Berechung der Anreicherung
-
-...
-
-### Eintragung im K10plus-Katalog
-
-Die ermittelte Anreicherung werden mit Angabe der beteiligten Vokabulare und Mappings im [PICA-Änderungsformat] in einem FTP-Hotfolder bereitgestellt. Ein anderer Dienst schaut dort regelmäßig nach ob Änderungen vorliegen und trägt diese in Paketen in den K10plus-Katalog ein. Die Eintragung wird bislang noch manuell angestoßen, in Zukunft sollen Anreicherungen täglich vorgenommen werden. Je nach Anzahl der Datensätze ist auch eine Eintragung innerhalb von Minuten denkbar.
+Die Anreicherung von Titeldatensätzen mit vorhandener Sacherschließung lässt sich relativ einfach aus den Mappingtabellen für die unterstützen Vokabulare ablesen. Die Anreicherungen und Korrekturen werden im PICA-Änderungsformat zur Eintragung im Katalog bereitgestellt.
 
 Die Anreicherung besteht aus den PICA-Feldern für das betreffende Zielvokabular und einer Quellenangabe in `$A`. Das erste Vorkommen enthält die Angabe der beteiligten Vokabulare und as zweite Vorkommen die URI des zur Anreicherung verwendeten Mappings. Im Falle der Anreicherung von RVK zu BK wird beispielsweise ein PICA+ Feld `045Q/01` mit folgenden Unterfeldern angelegt:
 
@@ -70,6 +88,10 @@ Hier ein Beispiel eines Änderungsdatensatzes:
 Bei Korrekturen und Löschungen wird dem Feld ein `-` vorangestellt.
 
 [PICA Änderungsformat]: https://pro4bib.github.io/pica/#/formate?id=%c3%84nderungsformat
+
+## Eintragung im K10plus-Katalog
+
+Die ermittelte Anreicherung werden mit Angabe der beteiligten Vokabulare und Mappings im [PICA-Änderungsformat] in einem FTP-Hotfolder bereitgestellt. Ein anderer Dienst schaut dort regelmäßig nach ob Änderungen vorliegen und trägt diese in Paketen in den K10plus-Katalog ein. Die Eintragung wird bislang noch manuell angestoßen, in Zukunft sollen Anreicherungen täglich vorgenommen werden. Je nach Anzahl der Datensätze ist auch eine Eintragung innerhalb von Minuten denkbar.
 
 ### Statistik und Korrekturen
 
@@ -105,7 +127,7 @@ Darüber hinaus kann es je Unterverzeichnis eine Konfiguration zur Auswahl von M
 
 Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen.
 
-*TODO: Das Skript wird derzeit überarbeitet*
+*TODO: Das Skript wird derzeit überarbeitet!*
 
 ### mapping-status
 
