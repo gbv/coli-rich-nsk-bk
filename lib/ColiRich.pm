@@ -9,6 +9,8 @@ use List::Util qw(any);
 
 my $defaultTrust = { type => [ 'exactMatch', 'narrowMatch' ] };
 
+our %APIOPT = ( debug => 0, ssl_opts => { verify_hostname => 0 } );
+
 sub getConcept {
     my ( $voc, %query ) = @_;
 
@@ -19,7 +21,7 @@ sub getConcept {
     state %cache;
     unless ( exists $cache{$hash} ) {
 
-        my $api = JSON::API->new( $voc->{API} );
+        my $api = JSON::API->new( $voc->{API}, %APIOPT );
         my $res = $api->get( 'data', { voc => $voc->{uri}, %query } );
         if ( $api->was_success && ref $res ) {
             $cache{$hash} = $res->[0];
@@ -41,7 +43,7 @@ sub getMappings {
     my @types = map { "http://www.w3.org/2004/02/skos/core#$_" }
       @{ $trust->{type} || $defaultTrust->{type} };
 
-    my $api      = JSON::API->new('http://coli-conc.gbv.de/api/mappings');
+    my $api = JSON::API->new( 'http://coli-conc.gbv.de/api/mappings', %APIOPT );
     my $mappings = $api->get(
         '',
         {
