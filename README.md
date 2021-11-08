@@ -1,6 +1,6 @@
 # coli-conc scripts
 
-Dieses Repository enthält Skripte zur Anreicherung der Sacherschließung im K10plus-Katalog auf Grundlage von Mappings und vorhandener Sacherschließung ([coli-rich](https://coli-conc.gbv.de/de/coli-rich/)).
+Dieses Repository enthält Skripte zur Anreicherung der Sacherschließung in Katalogen auf Grundlage von Mappings und vorhandener Sacherschließung ([coli-rich](https://coli-conc.gbv.de/de/coli-rich/)).
 
 ## Inhalt
 
@@ -32,15 +32,15 @@ Für den Produktivbetrieb sollen alle Schritte bis auf die Erstellung und Bewert
 
 ~~~
 +-------------+    .---------------.
-| Vokabulare  |   | Konfiguration  |-----------------> 3: Auswahl von
-+-----+-------+    '---------------'                   Titeldatensätzen
-      |        \      | 2: Auswahl von             .----------------------.
-      v         v     v Mappings                   v                       \
-  .--------.     +-----------------+    .-----------------.                 +---------+
-  | Cocoda |     | Mappingtabelle  |--->| 4: Anreicherung |---------------->| Katalog |             
-  '---+----'     +-----------------+    '-----------------' 5: Eintragung   +---------+
-      | 1: Erstellung    ^
-      v und Bewertung   / 
+| Vokabulare  |   | Konfiguration  |-----------------> Auswahl von
++-----+-------+    '---------------'                   "Titeldatensätzen (3)"
+      |        \      | Auswahl von                .------------------------.
+      v         v     v Mappings "(2)"             v                         \
+  .--------.     +-----------------+    .-------------------.                 +---------+
+  | Cocoda |     | Mappingtabelle  |--->| Anreicherung "(4)"|---------------->| Katalog |
+  '---+----'     +-----------------+    '-------------------' Eintragung "(5)"+---------+
+      | Erstellung und   ^
+      v Bewertung "(1)" /
  +----------+          /
  | Mappings |---------'
  +----------+
