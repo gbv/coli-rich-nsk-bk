@@ -129,13 +129,15 @@ sub status {
     }
 
     if ($mapping) {
-        my $to = join ' ∩ ',
-          map { $_->{notation}[0] } @{ $mapping->{to}{memberSet} };
+        my $toConcepts = $mapping->{to}{memberSet};
+        my $to = join ' ∩ ', map { $_->{notation}[0] } @$toConcepts;
 
         my $type = $mappingTypes{ ( $mapping->{type} || [] )->[0] } || '→ ';
 
         print "$type $to";
-        print " ✓" if $mapped;
+        if ($mapped) {
+            print join "", map { " " . $_->{uri } } @$toConcepts;
+        }
     }
     elsif ( my $lang = $opt{language} ) {
         print $concept->{prefLabel}{$lang};
