@@ -14,7 +14,7 @@ Dieses Repository enthält Skripte zur Anreicherung der Sacherschließung in Kat
 * [Technische Umsetzung](#technische-umsetzung)
   * [Installation](#installation)
   * [enrich](#enrich)
-  * [mapping-status](#mapping-status)
+  * [mapping-table](#mapping-table)
   * [titles-with-mapping](#titles-with-mapping)
   * [stats](#stats)
 
@@ -54,7 +54,7 @@ Zur Erstellung und Bewertung von Mappings dient die [Webanwendung Cocoda](https:
 
 ### Auswahl von Mappings
 
-Das Skript [mapping-status](#mapping-status) wertet die (Teil)hierarchie eines Quellvokabulars und vorhandene Mappings auf ein Zielvokabular aus und berechnet daraus eine Mapping-Tabelle.
+Das Skript [mapping-table](#mapping-table) wertet die (Teil)hierarchie eines Quellvokabulars und vorhandene Mappings auf ein Zielvokabular aus und berechnet daraus eine Mapping-Tabelle.
 
 Die Auswahl wird gesteuert davon, unter welchen Bedingungen Mappings als für die Anreicherung nutzbar gelten. Standardmäßig gilt dies wenn:
 
@@ -129,47 +129,47 @@ Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen.
 
 *TODO: Das Skript wird derzeit überarbeitet!*
 
-### mapping-status
+### mapping-table
 
-Das Skript `./bin/mapping-status` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden. Beispiel:
+Das Skript `./bin/mapping-table` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden. Beispiel:
 
 ~~~
-$ ./bin/mapping-status nsk-bk The -l en
+$ ./bin/mapping-table nsk-bk The -l en
 The                                               = 11
  The A                                            Allgemeines, Kirchengeschichte, Systematische Theologie
-  The A 100                                       ?
-  The A 1100                                      < 11.50 ✓
-  The A 1300                                      < 11.54 ∩ 11.50 ✓
-  The A 1600                                      < 11.55 ✓
-  The A 1700                                      < 11.55 ✓
-  The A 200                                       < 11.51 ✓
-  The A 2000                                      < 11.50 ✓
-  The A 300                                       < 11.61 ✓
-  The A 500                                       = 11.62 ✓
-  The A 700                                       < 11.50 ✓
-  The A 800                                       Papsttum, Kirchenstaat
-  The A 900                                       < 11.69 ✓
  The B                                            = 11.70
+ The C                                            = 11.30
+ The E                                            Einzelne christliche Konfessionen, Symbolik
+  The A 100                                       ?
+  The A 1100                                      < 11.50 http://uri.gbv.de/terminology/bk/11.50
+  The A 1300                                      < 11.54 ∩ 11.50 http://uri.gbv.de/terminology/bk/11.54 http://uri.gbv.de/terminology/bk/11.50
+  The A 1600                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
+  The A 1700                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
+  The A 200                                       < 11.51 http://uri.gbv.de/terminology/bk/11.51
+  The A 2000                                      < 11.50 http://uri.gbv.de/terminology/bk/11.50
+  The A 300                                       < 11.61 http://uri.gbv.de/terminology/bk/11.61
+  The A 500                                       = 11.62 http://uri.gbv.de/terminology/bk/11.62
+  The A 700                                       < 11.50 http://uri.gbv.de/terminology/bk/11.50
+  The A 800                                       Papsttum, Kirchenstaat
+  The A 900                                       < 11.69 http://uri.gbv.de/terminology/bk/11.69
   The B 100                                       ?
-  The B 200                                       = 11.74 ✓
-  The B 300                                       = 11.75 ✓
-  The B 400                                       = 11.71 ✓
+  The B 200                                       = 11.74 http://uri.gbv.de/terminology/bk/11.74
+  The B 300                                       = 11.75 http://uri.gbv.de/terminology/bk/11.75
+  The B 400                                       = 11.71 http://uri.gbv.de/terminology/bk/11.71
   The B 600                                       Katechetik
   The B 700                                       Mission
-  The B 800                                       < 11.79 ✓
- The C                                            = 11.30
-  The C 100                                       = 11.38 ✓
-  The C 200                                       = 11.44 ✓
- The E                                            Einzelne christliche Konfessionen, Symbolik
+  The B 800                                       < 11.79 http://uri.gbv.de/terminology/bk/11.79
+  The C 100                                       = 11.38 http://uri.gbv.de/terminology/bk/11.38
+  The C 200                                       = 11.44 http://uri.gbv.de/terminology/bk/11.44
   The E 100                                       Katholische Kirche
-  The E 1900                                      < 11.55 ✓
-  The E 200                                       < 11.54 ✓
+  The E 1900                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
+  The E 200                                       < 11.54 http://uri.gbv.de/terminology/bk/11.54
   The E 2000                                      Protestantische Kirchen
-  The E 2200                                      < 11.55 ✓
-  The E 300                                       < 11.57 ✓
-  The E 400                                       < 11.57 ✓
-  The E 500                                       < 11.57 ✓
-  The E 800                                       < 11.57 ✓
+  The E 2200                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
+  The E 300                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
+  The E 400                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
+  The E 500                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
+  The E 800                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
 ~~~
 
 ### titles-with-mapping
