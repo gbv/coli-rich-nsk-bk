@@ -123,54 +123,33 @@ Darüber hinaus kann es je Unterverzeichnis eine Konfiguration zur Auswahl von M
 
 *TODO: Die Konfiguration der Mapping-Auswahl muss noch genauer beschrieben werden*
 
+### mapping-table
+
+Das Skript `./bin/mapping-table` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden und eine Mappingtabelle zur Anreicherung erstellt werden. Beispiel:
+
+~~~
+$ ./bin/mapping-table nsk-bk "The A" -l en
+The A                                             Allgemeines, Kirchengeschichte, Systematische Theologie
+ The A 100                                        ?
+ The A 200                                        < 11.51 https://coli-conc.gbv.de/api/mappings/4858b9aa-f3fb-4f3c-a01d-94328cd199aa ✓
+ The A 300                                        < 11.61 https://coli-conc.gbv.de/api/mappings/cae6e0dd-7a71-4e1b-9d27-ef9a52f82276 ✓
+ The A 500                                        = 11.62 https://coli-conc.gbv.de/api/mappings/1e375fd9-204d-4fc3-a1a1-5200d7ae3362 ✓
+ The A 700                                        < 11.50 https://coli-conc.gbv.de/api/mappings/0f09a960-f66a-47e5-8ae9-2df7e1d92ad9 ✓
+ The A 800                                        Papsttum, Kirchenstaat
+ The A 900                                        < 11.69 https://coli-conc.gbv.de/api/mappings/05b694e4-d621-4103-b28f-b72676b10b85 ✓
+ The A 1100                                       < 11.50 https://coli-conc.gbv.de/api/mappings/7558e7fb-2f32-49ec-9a5b-d8828f317d51 ✓
+ The A 1300                                       < 11.54 ∩ 11.50 https://coli-conc.gbv.de/api/mappings/db518852-1af6-46dd-8b71-bddb17d6fd32 ✓
+ The A 1600                                       < 11.55 https://coli-conc.gbv.de/api/mappings/d7867a47-78cc-4a61-96bc-92b738d873e4 ✓
+ The A 1700                                       < 11.55 https://coli-conc.gbv.de/api/mappings/9ac16525-2169-4294-be53-0b3d479669b7 ✓
+ The A 2000                                       < 11.50 https://coli-conc.gbv.de/api/mappings/90d69b7a-ae1a-4c82-b2bc-61b7f9ca22d4 ✓
+~~~
+
 ### enrich
 
-Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen.
+Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen auf Grundlage einer vorhandenen Mapping-Tabelle.
 
 *TODO: Das Skript wird derzeit überarbeitet!*
 
-### mapping-table
-
-Das Skript `./bin/mapping-table` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden. Beispiel:
-
-~~~
-$ ./bin/mapping-table nsk-bk The -l en
-The                                               = 11
- The A                                            Allgemeines, Kirchengeschichte, Systematische Theologie
- The B                                            = 11.70
- The C                                            = 11.30
- The E                                            Einzelne christliche Konfessionen, Symbolik
-  The A 100                                       ?
-  The A 1100                                      < 11.50 http://uri.gbv.de/terminology/bk/11.50
-  The A 1300                                      < 11.54 ∩ 11.50 http://uri.gbv.de/terminology/bk/11.54 http://uri.gbv.de/terminology/bk/11.50
-  The A 1600                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
-  The A 1700                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
-  The A 200                                       < 11.51 http://uri.gbv.de/terminology/bk/11.51
-  The A 2000                                      < 11.50 http://uri.gbv.de/terminology/bk/11.50
-  The A 300                                       < 11.61 http://uri.gbv.de/terminology/bk/11.61
-  The A 500                                       = 11.62 http://uri.gbv.de/terminology/bk/11.62
-  The A 700                                       < 11.50 http://uri.gbv.de/terminology/bk/11.50
-  The A 800                                       Papsttum, Kirchenstaat
-  The A 900                                       < 11.69 http://uri.gbv.de/terminology/bk/11.69
-  The B 100                                       ?
-  The B 200                                       = 11.74 http://uri.gbv.de/terminology/bk/11.74
-  The B 300                                       = 11.75 http://uri.gbv.de/terminology/bk/11.75
-  The B 400                                       = 11.71 http://uri.gbv.de/terminology/bk/11.71
-  The B 600                                       Katechetik
-  The B 700                                       Mission
-  The B 800                                       < 11.79 http://uri.gbv.de/terminology/bk/11.79
-  The C 100                                       = 11.38 http://uri.gbv.de/terminology/bk/11.38
-  The C 200                                       = 11.44 http://uri.gbv.de/terminology/bk/11.44
-  The E 100                                       Katholische Kirche
-  The E 1900                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
-  The E 200                                       < 11.54 http://uri.gbv.de/terminology/bk/11.54
-  The E 2000                                      Protestantische Kirchen
-  The E 2200                                      < 11.55 http://uri.gbv.de/terminology/bk/11.55
-  The E 300                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
-  The E 400                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
-  The E 500                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
-  The E 800                                       < 11.57 http://uri.gbv.de/terminology/bk/11.57
-~~~
 
 ### titles-with-mapping
 

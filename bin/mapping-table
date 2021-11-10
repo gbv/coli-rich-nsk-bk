@@ -4,13 +4,14 @@ use Pod::Usage;
 use Getopt::Long;
 use JSON::API;
 use Catmandu;
+use List::Util qw(any);
 
 use Cwd qw(abs_path);
 use FindBin;
 use lib abs_path("$FindBin::Bin/../lib");
-use ColiRich;
+use ColiRich qw(getConcept getScheme mappingTypeByUri getMappings);
 
-GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s', 'depth|d=i' )
+GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s', 'depth|d=i', 'full|f' )
   or pod2usage(2);
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
@@ -18,58 +19,23 @@ pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
 pod2usage("missing schemes argument") if @ARGV < 1;
 pod2usage("missing concept(s)")       if @ARGV < 2;
 
-my %schemes = (
-    NSK => {
-        notation => ["NSK"],
-        uri      => "http://bartoc.org/en/node/20298",
-        API      => "https://coli-conc.gbv.de/api/",
-    },
-    BK => {
-        notation => ["BK"],
-        uri      => "http://bartoc.org/en/node/18785",
-        API      => "http://api.dante.gbv.de/",
-    },
-    RVK => {
-        notation => ["RVK"],
-        uri      => "http://uri.gbv.de/terminology/rvk/",
-        API      => "https://coli-conc.gbv.de/rvk/api/"
-    },
-    DDC => {
-        notation => ["DDC"],
-        uri      => "http://bartoc.org/en/node/241",
-        API      => "https://coli-conc.gbv.de/api/"
-    }
-);
-
-my %mappingTypes = (
-    'http://www.w3.org/2004/02/skos/core#closeMatch'      => "≈",
-    'http://www.w3.org/2004/02/skos/core#exactMatch'      => "=",
-    'http://www.w3.org/2004/02/skos/core#narrowMatch'     => "<",
-    'http://www.w3.org/2004/02/skos/core#broadMatch'      => ">",
-    'http://www.w3.org/2004/02/skos/core#relatedMatch'    => "~",
-    'http://www.w3.org/2004/02/skos/core#mappingRelation' => '→',
-);
-
 my $trust =
   $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : {};
 
-my ( $from, $to ) = map { $schemes{$_} or pod2usage("unknown scheme $_") }
+my ( $from, $to ) = map { getScheme(notation => $_) or pod2usage("unknown scheme $_") }
   map { uc $_ } split /-/, shift @ARGV;
-my @queue = @ARGV;
 
-my $startDepth = -1;
+buildTable($_, 0) for @ARGV;
 
-while (@queue) {
-    my $notation = shift @queue;
+sub buildTable {
+    my ($notation, $depth) = @_;
 
     my $concept = getConcept(
         $from,
         notation   => $notation,
-        properties => "narrower,ancestors"
+        properties => "narrower"
     );
     if ($concept) {
-        my $depth = scalar @{ $concept->{ancestors} || [] };
-        $startDepth = $depth if $startDepth == -1;
         
         my $children = $concept->{narrower};
         $children = undef if $children && !$children->[0];
@@ -82,41 +48,34 @@ while (@queue) {
             for ( my $i = 0 ; $i < @mappings ; $i++ ) {
                 my $m = $mappings[$i];
 
-                my $notation = join ' ∧ ',
-                  map { $_->{notation}[0] } @{ $m->{to}{memberSet} };
-
-                my $target = getConcept(
+                my @targets = map { getConcept(
                     $to,
-                    notation   => $notation,
+                    notation   => $_->{notation}[0],
                     properties => 'narrower'
-                );
+                ) } @{ $m->{to}{memberSet} };
 
-                my $leaf = !$target->{narrower} || !@{$target->{narrower}};
-                $mapped = 1 if $target && !( $children && !$leaf );
+                if (@targets) {
+                    # 1-n mappings are done if one member is a leaf
+                    $mapped = !$children || any { !@{$_->{narrower} || []} } @targets;
+                }
 
-                status( $concept, $m, $mapped, $i );
+                status( $concept, $depth, $m, $mapped && !$opt{full}, $i );
             }
         }
         else {
-            status($concept);
+            status($concept, $depth);
         }
 
-        unless ($mapped) {
-
-            # TODO: traverse anyway if required to do so
-
-            next if $opt{depth} && $depth - $startDepth + 1 >= $opt{depth};
-            next unless $children;
-            push @queue, sort map { $_->{notation}[0] } @$children;
+        if ($children && (!$opt{depth} || $depth < $opt{depth} - 1) && !$mapped) {
+            buildTable($_->{notation}[0], $depth + 1) for @$children;
         }
     }
 }
 
 sub status {
-    my ( $concept, $mapping, $mapped, $etc ) = @_;
+    my ( $concept, $depth, $mapping, $mapped, $etc ) = @_;
 
     my $notation = $concept->{notation}[0];
-    my $depth    = scalar @{ $concept->{ancestors} } - $startDepth;
     my $width    = 50;
 
     if ($etc) {
@@ -132,12 +91,12 @@ sub status {
         my $toConcepts = $mapping->{to}{memberSet};
         my $to = join ' ∩ ', map { $_->{notation}[0] } @$toConcepts;
 
-        my $type = $mappingTypes{ ( $mapping->{type} || [] )->[0] } || '→ ';
+        my $type = mappingTypeByUri($mapping->{type}[0]);
+        $type = $type ? $type->{notation}[0] : '→ ';
 
         print "$type $to";
-        if ($mapped) {
-            print join "", map { " " . $_->{uri } } @$toConcepts;
-        }
+        print " $mapping->{uri}" if $mapping;
+        print " ✓" if $mapped;
     }
     elsif ( my $lang = $opt{language} ) {
         print $concept->{prefLabel}{$lang};
@@ -148,7 +107,7 @@ sub status {
 
 =head1 SYNOPSIS
 
- mapping-status [options] <scheme> <scheme> <concept...>
+ mapping-table [options] <scheme> <scheme> <concept...>
 
 =head1 OPTIONS
  
@@ -156,11 +115,12 @@ sub status {
  --language|-l   include label in given language if concept not mapped
  --depth|-d      maximum depth to traverse to with first concept at 1
  --trust|-t      YAML file to load trust rules from
+ --full|-f       include all classes even if covered by a broader concept
 
 =head1 EXAMPLES
 
- mapping-status nsk-bk The -l en
- mapping-status ddc-bk 949 -l de -d 2
- mapping-status rvk-bk WE -l de -t trusted-rvk.yaml
+ mapping-table nsk-bk The -l en
+ mapping-table ddc-bk 949 -l de -d 2
+ mapping-table rvk-bk WE -l de -t trusted-rvk.yaml
 
 =cut

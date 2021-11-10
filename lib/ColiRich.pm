@@ -2,7 +2,8 @@ package ColiRich;
 use v5.14.1;
 
 use parent qw(Exporter);
-our @EXPORT = qw(getConcept trustedMapping getMappings);
+our @EXPORT =
+  qw(getConcept getScheme trustedMapping getMappings mappingTypeByUri);
 
 use JSON::API;
 use List::Util qw(any);
@@ -36,6 +37,34 @@ sub getConcept {
     return $cache{$hash};
 }
 
+my %schemes = (
+    NSK => {
+        notation => ["NSK"],
+        uri      => "http://bartoc.org/en/node/20298",
+        API      => "https://coli-conc.gbv.de/api/",
+    },
+    BK => {
+        notation => ["BK"],
+        uri      => "http://bartoc.org/en/node/18785",
+        API      => "http://api.dante.gbv.de/",
+    },
+    RVK => {
+        notation => ["RVK"],
+        uri      => "http://uri.gbv.de/terminology/rvk/",
+        API      => "https://coli-conc.gbv.de/rvk/api/"
+    },
+    DDC => {
+        notation => ["DDC"],
+        uri      => "http://bartoc.org/en/node/241",
+        API      => "https://coli-conc.gbv.de/api/"
+    }
+);
+
+sub getScheme {
+    my %query = @_;
+    return $schemes{ $query{notation} };
+}
+
 sub getMappings {
     my ( $from, $to, $notation, $trust ) = @_;
 
@@ -56,6 +85,20 @@ sub getMappings {
     );
 
     return grep { trustedMapping( $_, $trust ) } @$mappings;
+}
+
+my %mappingTypes = (
+    'http://www.w3.org/2004/02/skos/core#closeMatch' => { notation => ["≈"] },
+    'http://www.w3.org/2004/02/skos/core#exactMatch' => { notation => ["="] },
+    'http://www.w3.org/2004/02/skos/core#narrowMatch'  => { notation => ["<"] },
+    'http://www.w3.org/2004/02/skos/core#broadMatch'   => { notation => [">"] },
+    'http://www.w3.org/2004/02/skos/core#relatedMatch' => { notation => ["~"] },
+    'http://www.w3.org/2004/02/skos/core#mappingRelation' =>
+      { notation => ['→'] },
+);
+
+sub mappingTypeByUri {
+    return $mappingTypes{ $_[0] };
 }
 
 sub trustedMapping {
