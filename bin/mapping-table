@@ -60,14 +60,15 @@ sub buildTable {
                     $mapped = !$children || any { !@{$_->{narrower} || []} } @targets;
                 }
 
-                status( $concept, $depth, $m, $mapped && !$opt{full}, $i );
+                status( $concept, $depth, $m, $mapped, $i );
             }
         }
         else {
             status($concept, $depth);
         }
 
-        if ($children && (!$opt{depth} || $depth < $opt{depth} - 1) && !$mapped) {
+        my $proceed = $children && (!$mapped || $opt{full});
+        if ($proceed && (!$opt{depth} || $depth < $opt{depth} - 1)) {
             buildTable($_, $depth + 1) for natsort map { $_->{notation}[0] } @$children;
         }
     }
@@ -116,7 +117,7 @@ sub status {
  --language|-l   include label in given language if concept not mapped
  --depth|-d      maximum depth to traverse to with first concept at 1
  --trust|-t      YAML file to load trust rules from
- --full|-f       include all classes even if covered by a broader concept
+ --full|-f       include all concepts even if covered by a broader concept
 
 =head1 EXAMPLES
 
