@@ -11,8 +11,9 @@ use Cwd qw(abs_path);
 use FindBin;
 use lib abs_path("$FindBin::Bin/../lib");
 use ColiRich qw(getConcept getScheme mappingTypeByUri getMappings);
+use MappingSelector;
 
-GetOptions( \my %opt, 'help|?', 'language|l=s', 'trust|t=s', 'depth|d=i', 'full|f' )
+GetOptions( \my %opt, 'help|?', 'language|l=s', 'config|c=s', 'depth|d=i', 'full|f' )
   or pod2usage(2);
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
@@ -20,8 +21,7 @@ pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
 pod2usage("missing schemes argument") if @ARGV < 1;
 pod2usage("missing concept(s)")       if @ARGV < 2;
 
-my $trust =
-  $opt{trust} ? Catmandu->importer( 'YAML', file => $opt{trust} )->next : {};
+my $selector = new MappingSelector($opt{config} || 'mapping-table.yaml');
 
 my ( $from, $to ) = map { getScheme(notation => $_) or pod2usage("unknown scheme $_") }
   map { uc $_ } split /-/, shift @ARGV;
@@ -42,7 +42,7 @@ sub buildTable {
         $children = undef if $children && !$children->[0];
 
         my $mapped;
-        my @mappings = getMappings( $from, $to, $notation, $trust );
+        my @mappings = grep { $selector->isSelected($_) } getMappings( $from, $to, $notation );
 
         if (@mappings) {
             
@@ -109,20 +109,20 @@ sub status {
 
 =head1 SYNOPSIS
 
- mapping-table [options] <scheme> <scheme> <concept...>
+ mapping-table [options] <schemes> <concept...>
 
 =head1 OPTIONS
  
  --help|-h       this help message
  --language|-l   include label in given language if concept not mapped
  --depth|-d      maximum depth to traverse to with first concept at 1
- --trust|-t      YAML file to load trust rules from
+ --config|-c     YAML file to load rules from (default: mapping-table.yaml)
  --full|-f       include all concepts even if covered by a broader concept
 
 =head1 EXAMPLES
 
  mapping-table nsk-bk The -l en
  mapping-table ddc-bk 949 -l de -d 2
- mapping-table rvk-bk WE -l de -t trusted-rvk.yaml
+ mapping-table rvk-bk WE -l de -c trusted.yaml
 
 =cut

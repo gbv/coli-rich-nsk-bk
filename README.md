@@ -54,16 +54,15 @@ Zur Erstellung und Bewertung von Mappings dient die [Webanwendung Cocoda](https:
 
 ### Auswahl von Mappings
 
-Das Skript [mapping-table](#mapping-table) wertet die (Teil)hierarchie eines Quellvokabulars und vorhandene Mappings auf ein Zielvokabular aus und berechnet daraus eine Mapping-Tabelle.
+Das Skript [mapping-table](#mapping-table) wertet die (Teil)hierarchie eines Quellvokabulars und vorhandene Mappings auf ein Zielvokabular aus und berechnet daraus eine Mappingtabelle. Dabei werden nur für die Anreicherung nutzbare Mappings berücksichtigt. Nutzbare Mappings müssen folgende Bedingungen erfüllen:
 
-Die Auswahl wird gesteuert davon, unter welchen Bedingungen Mappings als für die Anreicherung nutzbar gelten. Standardmäßig gilt dies wenn:
+* Sie müssen entweder bestätigt sein (✔️ ) oder es darf keinen Widerspruch geben (👎 ).
+* Sie müssen vom Mappingtyp exactMatch (=), narrowMatch (<) oder ohne Mappingtyp sein.
+* Falls sie nicht bestätigt sind müssen sie 
+    * zu einer ausgewählten Konkordanz gehören 
+    * oder von einem ausgewählten Account worden erstellt sein und vom Typ exactMatch oder narrowMatch sein
 
-* Ein Mapping vom Typ exact (=) oder narrower (<) ist und
-* Ein Mapping bestätigt wurde, oder
-* Ein Mapping von ausgewählten Accounts erstellt und nicht downgevoted wurde, oder
-* Ein Mapping Teil von ausgewählten Konkordanzen ist und nicht downgevoted wurde
-
-Diese Auswahl lässt sich in Zukunft pro Vokabular und Konkordanz konfigurieren.
+Die ausgewählten Konkordanzen und Accounts lassen sich in einer Konfigurationsdatei festlegen. Dabei ist es auch möglich, einzelne Accounts nur für bestimmte Vokabulare auszuwählen.
 
 ### Auswahl von Titeldatensätzen
 
@@ -125,7 +124,7 @@ Darüber hinaus kann es je Unterverzeichnis eine Konfiguration zur Auswahl von M
 
 ### mapping-table
 
-Das Skript `./bin/mapping-table` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden und eine Mappingtabelle zur Anreicherung erstellt werden. Beispiel:
+Das Skript `./bin/mapping-table` durchläuft einen Teilbaum eines Vokabulars und ermittelt welcher Bereich durch nutzbare Mappings abgedeckt ist. Somit kann die Vollständigkeit einer Konkordanz überprüft werden und eine Mappingtabelle zur Anreicherung erstellt werden. Beispiel:
 
 ~~~
 $ ./bin/mapping-table nsk-bk "The A" -l en
@@ -146,7 +145,7 @@ The A                                             Allgemeines, Kirchengeschichte
 
 ### enrich
 
-Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen auf Grundlage einer vorhandenen Mapping-Tabelle.
+Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen auf Grundlage einer vorhandenen Mappingtabelle.
 
 *TODO: Das Skript wird derzeit überarbeitet!*
 

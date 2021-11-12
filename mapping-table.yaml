@@ -1,0 +1,34 @@
+# Alle Mappings dieser Accounts sind OK
+# Außer wenn downgevoted oder Mappingtyp nicht exact oder narrower
+creators:
+
+  # Alle Vokabulare
+
+  # Jakob
+  - "https://coli-conc.gbv.de/login/users/3a1bb23f-8d60-4b7a-8bec-cc419d7f6ab6"
+  - "https://orcid.org/0000-0002-7613-4123"
+  - "https://github.com/nichtich"
+  - "https://www.wikidata.org/wiki/User:JakobVoss"
+  - "https://orcid.org/0000-0002-7613-4123"
+
+  # Anne
+  - "https://github.com/schuchaa"
+
+  # Viola Voß
+  - "https://coli-conc.gbv.de/login/users/a5ba5153-ddb4-4d58-b733-dd7948636885"
+
+  # Stefan
+  - "https://github.com/stefandesu"
+
+  # Ausgewählte Vokabulare
+
+  - fromScheme: NSK
+    creators:
+      # Hedwig Suwelack
+      - "https://orcid.org/0000-0001-5203-9976"
+
+# Alle Mappings dieser Konkordanzen sind OK 
+# Außer wenn downgevoted oder Mappingtyp close, related oder broader
+concordances:
+  - http://coli-conc.gbv.de/concordances/rvk_bk_recht
+  - http://coli-conc.gbv.de/concordances/rvk_bk_wiwi
