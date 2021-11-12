@@ -5,6 +5,7 @@ use Getopt::Long;
 use JSON::API;
 use Catmandu;
 use List::Util qw(any);
+use Sort::Key::Natural qw(natsort);
 
 use Cwd qw(abs_path);
 use FindBin;
@@ -67,7 +68,7 @@ sub buildTable {
         }
 
         if ($children && (!$opt{depth} || $depth < $opt{depth} - 1) && !$mapped) {
-            buildTable($_->{notation}[0], $depth + 1) for @$children;
+            buildTable($_, $depth + 1) for natsort map { $_->{notation}[0] } @$children;
         }
     }
 }
