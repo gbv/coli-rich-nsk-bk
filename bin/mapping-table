@@ -11,7 +11,7 @@ use Cwd qw(abs_path);
 use FindBin;
 use lib abs_path("$FindBin::Bin/../lib");
 use ColiRich qw(getConcept getScheme mappingTypeByUri getMappings);
-use MappingSelector;
+use MappingFilter;
 
 GetOptions( \my %opt, 'help|?', 'language|l=s', 'config|c=s', 'depth|d=i', 'full|f' )
   or pod2usage(2);
@@ -21,7 +21,7 @@ pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
 pod2usage("missing schemes argument") if @ARGV < 1;
 pod2usage("missing concept(s)")       if @ARGV < 2;
 
-my $selector = new MappingSelector($opt{config} || 'mapping-table.yaml');
+my $filter = new MappingFilter($opt{config} || 'mapping-table.yaml');
 
 my ( $from, $to ) = map { getScheme(notation => $_) or pod2usage("unknown scheme $_") }
   map { uc $_ } split /-/, shift @ARGV;
@@ -42,7 +42,7 @@ sub buildTable {
         $children = undef if $children && !$children->[0];
 
         my $mapped;
-        my @mappings = grep { $selector->isSelected($_) } getMappings( $from, $to, $notation );
+        my @mappings = grep { $filter->filter($_) } getMappings( $from, $to, $notation );
 
         if (@mappings) {
             
