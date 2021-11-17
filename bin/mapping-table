@@ -3,17 +3,18 @@ use v5.14.1;
 use Pod::Usage;
 use Getopt::Long;
 use JSON::API;
-use Catmandu;
+use JSON::PP;
 use List::Util qw(any);
 use Sort::Key::Natural qw(natsort);
 
 use Cwd qw(abs_path);
 use FindBin;
+use Catmandu -load => [abs_path("$FindBin::Bin/..")], -all;
 use lib abs_path("$FindBin::Bin/../lib");
 use ColiRich qw(getConcept getScheme mappingTypeByUri getMappings);
 use MappingFilter;
 
-GetOptions( \my %opt, 'help|?', 'language|l=s', 'config|c=s', 'depth|d=i', 'full|f' )
+GetOptions( \my %opt, 'help|?', 'language|l=s', 'config|c=s', 'depth|d=i', 'full|f', 'json|j=s' )
   or pod2usage(2);
 pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
   if $opt{help} or !@ARGV;
@@ -26,7 +27,12 @@ my $filter = new MappingFilter($opt{config} || 'mapping-table.yaml');
 my ( $from, $to ) = map { getScheme(notation => $_) or pod2usage("unknown scheme $_") }
   map { uc $_ } split /-/, shift @ARGV;
 
-buildTable($_, 0) for @ARGV;
+my $table = buildTable(shift @ARGV, 0);
+
+if (@ARGV) {
+  my $exporter = Catmandu->exporter('JSON', pretty => 1, array => 0, file => shift @ARGV);
+  $exporter->add($table);
+}
 
 sub buildTable {
     my ($notation, $depth) = @_;
@@ -37,12 +43,19 @@ sub buildTable {
         properties => "narrower"
     );
     if ($concept) {
-        
+        # reduce data to simplify intellectual inspection
+        delete $concept->{$_} for grep { $_ !~ /uri|prefLabel|notation|narrower/ } keys %$concept;
+       
         my $children = $concept->{narrower};
         $children = undef if $children && !$children->[0];
 
-        my $mapped;
+        my $done;
         my @mappings = grep { $filter->filter($_) } getMappings( $from, $to, $notation );
+
+        # reduce data to simplify intellectual inspection
+        for my $m (@mappings) {
+            delete $m->{$_} for grep { $_ !~ /^(uri|type|to)$/ } keys %$m;
+        }
 
         if (@mappings) {
             
@@ -57,25 +70,32 @@ sub buildTable {
 
                 if (@targets) {
                     # 1-n mappings are done if one member is a leaf
-                    $mapped = !$children || any { !@{$_->{narrower} || []} } @targets;
+                    $done = !$children || any { !@{$_->{narrower} || []} } @targets;
+                    $m->{DONE} = $done ? JSON::PP::true : JSON::PP::false;
                 }
 
-                status( $concept, $depth, $m, $mapped, $i );
+                status( $concept, $depth, $m, $i );
             }
+
+            $concept->{mappings} = \@mappings;
         }
         else {
             status($concept, $depth);
         }
 
-        my $proceed = $children && (!$mapped || $opt{full});
+        my $proceed = $children && (!$done || $opt{full});
         if ($proceed && (!$opt{depth} || $depth < $opt{depth} - 1)) {
-            buildTable($_, $depth + 1) for natsort map { $_->{notation}[0] } @$children;
+            for (natsort map { $_->{notation}[0] } @$children) {
+                push @{$concept->{narrower}}, buildTable($_, $depth + 1);
+            }
         }
     }
+
+    return $concept;
 }
 
 sub status {
-    my ( $concept, $depth, $mapping, $mapped, $etc ) = @_;
+    my ( $concept, $depth, $mapping, $etc ) = @_;
 
     my $notation = $concept->{notation}[0];
     my $width    = 50;
@@ -98,7 +118,7 @@ sub status {
 
         print "$type $to";
         print " $mapping->{uri}" if $mapping;
-        print " ✓" if $mapped;
+        print " ✓" if $mapping->{DONE};
     }
     elsif ( my $lang = $opt{language} ) {
         print $concept->{prefLabel}{$lang};
@@ -109,7 +129,7 @@ sub status {
 
 =head1 SYNOPSIS
 
- mapping-table [options] <schemes> <concept...>
+ mapping-table [options] <schemes> <concept> [<result>]
 
 =head1 OPTIONS
  
@@ -123,6 +143,6 @@ sub status {
 
  mapping-table nsk-bk The -l en
  mapping-table ddc-bk 949 -l de -d 2
- mapping-table rvk-bk WE -l de -c trusted.yaml
+ mapping-table rvk-bk WE -l de -c trusted.yaml rvk-bk-WE.json
 
 =cut

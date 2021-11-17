@@ -100,7 +100,7 @@ Werden nachträglich Fehler erkannt so lässt sich die Anreicherung automatisch 
 
 1. Korrektur der Anreicherung einzelner Titel
 
-   Haben sich die vorhandenen Mappings oder die Sacherschließung eines Titels geändert so wird mit dem Skript [enrich](#enrich) die gesamte Anreicherung des Titels neu berechnet.
+   Haben sich die vorhandenen Mappings oder die Sacherschließung eines Titels geändert so wird mit dem Skript [enrich](#enrich) die gesamte Anreicherung des Titels neu berechnet (*noch nicht vollständig implementiert*).
 
 2. Korrektur einzelner Mappings
 
@@ -143,12 +143,19 @@ The A                                             Allgemeines, Kirchengeschichte
  The A 2000                                       < 11.50 https://coli-conc.gbv.de/api/mappings/90d69b7a-ae1a-4c82-b2bc-61b7f9ca22d4 ✓
 ~~~
 
+Die Mappingtabelle kann zusätzlich in JSKOS gespeichert werden.
+
 ### enrich
 
-Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen auf Grundlage einer vorhandenen Mappingtabelle.
+Das Skript `./bin/enrich` berechnet für PICA-Datensätze Anreicherungen auf Grundlage einer vorhandenen Mappingtabelle (in JSKOS).
 
-*TODO: Das Skript wird derzeit überarbeitet!*
+Als Eingabe werden PICA-Datensätze erwartet, die mindestens über das Feld `003@` (PPN) und über die jeweiligen Erschließungsfelder verfügen müssen (z.B. `045R` für RVK). Die Ausgabe erfolgt im PICA-Änderungsformat.
 
+~~~
+$ cat example.pica
+
+$ ./bin/enrich rvk-bk rvk-bk-table.json
+~~~
 
 ### titles-with-mapping
 

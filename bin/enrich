@@ -1,0 +1,165 @@
+#!/usr/bin/env perl
+use v5.14.1;
+use Pod::Usage;
+use Getopt::Long;
+use Catmandu qw(importer);
+use PICA::Data qw(:all);
+
+use Cwd qw(abs_path);
+use FindBin;
+use lib abs_path("$FindBin::Bin/../lib");
+use ColiRich;
+
+GetOptions( \my %opt, 'help|?', 'full|f' )
+  or pod2usage(2);
+pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
+  if $opt{help} or !@ARGV;
+
+pod2usage("missing schemes argument")   if @ARGV < 1;
+pod2usage("malformed schemes argument") if $ARGV[0] !~ /^[^-]+-[^-]+$/;
+pod2usage("missing table argument")     if @ARGV < 2;
+
+my ( $from, $to ) =
+  map { getScheme( notation => $_ ) or pod2usage("unknown scheme $_") }
+  map { uc $_ } split /-/, shift @ARGV;
+
+$_->{PICAPATH} = pica_path( $_->{PICAPATH}, position_as_occurrence => 1 )
+  for ( $from, $to );
+
+# TODO: support more target vocabularies
+if ($to->{uri} ne "http://bartoc.org/en/node/18785") {
+    die "Sorry, only enrichment with BK supported by now!\n";
+}
+
+my $mappingTable = MappingTable->new( shift @ARGV );
+
+my $parser = pica_parser('plain');
+my $writer = pica_writer( 'plain', annotated => 1 );
+
+while ( my $record = $parser->next ) {
+    my $pica = $record->fields('003@') or next;
+
+    $pica = $record->fields if $opt{full};
+
+    my @fromNotations = $record->values( $from->{PICAPATH} ) or next;
+    my @toNotations = $record->values( $to->{PICAPATH} );
+
+    # TODO: bestehende Mappings kontrollieren und ggf. ändern ?
+
+    my $enrich = $mappingTable->mapNotations(@fromNotations);
+
+    # don't enrich existing notations
+    delete $enrich->{$_} for @toNotations;
+
+    next unless %$enrich;
+
+    # blank annotation
+    push (@$_, ' ') for @$pica;
+
+    my $source = "coli-conc $from->{notation}[0]\->$to->{notation}[0]";
+
+    while ( my ( $notation, $mappingUri ) = each %$enrich ) {
+
+        # TODO: support more target vocabularies
+        my $conceptPPN = getBKPPN($notation); 
+
+        push @$pica,
+          [
+            $to->{PICAPATH}->fields,
+            $to->{PICAPATH}->occurrences,
+            9 => $conceptPPN,
+            a => $notation,
+            A => $source,
+            A => $mappingUri,
+            '+'
+          ];
+    }
+
+    $writer->write(pica_sort($pica));
+}
+
+# Look up a BK class by its notation and return its PPN. Dies if not found.
+sub getBKPPN {
+    state %cache;
+
+    my $notation = shift;
+    return $cache{$notation} if exists $cache{$notation};
+
+    # get PPN of BK record
+    my $importer = importer( 'kxp-normdaten', query => "pica.bkl=$notation" );
+    my $pica = $importer->next;
+    die "Failed to get unique PPN for BK record $notation\n"
+      if !$pica || $importer->next;
+
+    return $cache{$notation} = $pica->{_id};
+}
+
+package MappingTable {
+
+    sub new {
+        my ( $class, $file, %options ) = @_;
+        my $table = Catmandu->importer( 'JSON', file => $file )->next;
+        
+        my $concepts = {};
+        my $visit;
+        $visit = sub {            
+            my $c = shift;
+            $concepts->{ $c->{notation}[0] } = $c;
+            for (@{$c->{narrower} || []}) {
+                $_->{broader} = [ $c ];
+                $visit->($_);
+            }
+        };
+        $visit->($table);
+
+        bless $concepts, $class;
+    }
+
+    sub findMappedNotation {
+        my ($self, $notation) = @_;
+
+        my $c = $self->{$_} or return;
+        while ($c) {
+            for ( @{ $c->{mappings} || [] } ) {
+                my $uri = $_->{uri};
+                for (@{$_->{to}{memberSet}}) {
+                    return ($_->{notation}[0], $uri);
+                }
+            }
+
+            last unless $c->{broader};
+            $c = $c->{broader}[0];
+        }
+    }
+
+    sub mapNotations {
+        my $self = shift;
+        my $map = {};
+
+        for (@_) {
+            my ($notation, $uri) = $self->findMappedNotation($_);
+            if ($notation) {
+                $map->{$notation} = $uri;
+            }
+        }
+
+        return $map;
+    }
+};
+
+=head1 SYNOPSIS
+
+ enrich [options] <schemes> <tablefile>
+
+ Enrich PICA Plain records (from stdin) based on a mapping table.
+
+=head1 OPTIONS
+ 
+ --help|-h       this help message
+ --full|-f       emit full PICA Plain record, not only enriched fields
+
+=head1 EXAMPLES
+
+ enrich rvk-bk rv-bk-table.json < records.pica
+
+=cut
