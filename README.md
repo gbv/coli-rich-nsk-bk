@@ -110,7 +110,7 @@ Werden nachträglich Fehler erkannt so lässt sich die Anreicherung automatisch 
 
 ### Installation
 
-Benötigt wird Bash, jq und Perl mit Catmandu. Die Datei `cpanfile` enthält alle Perl-Dependencies (`cpanm --installdeps .`).
+Benötigt wird Bash, jq und Perl mit Catmandu. Die Datei `cpanfile` enthält alle Perl-Dependencies (`cpanm --installdeps . -n`).
 
 *TODO: Teile des Verfahren sollen auf JavaScript umgestellt werden, damit sie auch direkt in Cocoda eingesetzt werden können.*
 
