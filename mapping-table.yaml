@@ -1,6 +1,6 @@
 # Alle Mappings dieser Accounts sind OK
 # Außer wenn downgevoted oder Mappingtyp nicht exact oder narrower
-creators:
+creator:
 
   # Alle Vokabulare
 
@@ -20,6 +20,9 @@ creators:
   # Stefan
   - "https://github.com/stefandesu"
 
+  # David-Benjamin Rohrer
+  - "https://github.com/DavidBRohrer"
+
   # Ausgewählte Vokabulare
 
   - fromScheme: NSK
@@ -30,5 +33,9 @@ creators:
 # Alle Mappings dieser Konkordanzen sind OK 
 # Außer wenn downgevoted oder Mappingtyp close, related oder broader
 concordances:
-  - http://coli-conc.gbv.de/concordances/rvk_bk_recht
-  - http://coli-conc.gbv.de/concordances/rvk_bk_wiwi
+
+  - https://coli-conc.gbv.de/api/concordances/rvk-bk
+
+  # ULB Tirol
+  # - http://coli-conc.gbv.de/concordances/rvk_bk_recht
+  # - http://coli-conc.gbv.de/concordances/rvk_bk_wiwi

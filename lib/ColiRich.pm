@@ -2,10 +2,11 @@ package ColiRich;
 use v5.14.1;
 
 use parent qw(Exporter);
-our @EXPORT = qw(getConcept getScheme getMappings mappingTypeByUri);
+our @EXPORT = qw(getConcept getScheme getMappings mappingTypeByUri coliRich);
 
 use JSON::API;
 use List::Util qw(any);
+use MappingSource;    # TODO: relative to this directory
 
 our %APIOPT = ( debug => 0, ssl_opts => { verify_hostname => 0 } );
 
@@ -82,8 +83,8 @@ sub getMappings {
 }
 
 my %mappingTypes = (
-    'http://www.w3.org/2004/02/skos/core#closeMatch' => { notation => ["≈"] },
-    'http://www.w3.org/2004/02/skos/core#exactMatch' => { notation => ["="] },
+    'http://www.w3.org/2004/02/skos/core#closeMatch'   => { notation => ["≈"] },
+    'http://www.w3.org/2004/02/skos/core#exactMatch'   => { notation => ["="] },
     'http://www.w3.org/2004/02/skos/core#narrowMatch'  => { notation => ["<"] },
     'http://www.w3.org/2004/02/skos/core#broadMatch'   => { notation => [">"] },
     'http://www.w3.org/2004/02/skos/core#relatedMatch' => { notation => ["~"] },
@@ -93,6 +94,51 @@ my %mappingTypes = (
 
 sub mappingTypeByUri {
     return $mappingTypes{ $_[0] };
+}
+
+sub getBKEnrichment {
+    my ( $from, $to, @fromNotations ) = @_;
+
+    state $bkSource = MappingSource->new( from => $from, to => $to );
+
+    return $bkSource->mapNotations(@fromNotations);
+}
+
+sub coliRich {
+    my ( $record, $from, $to, $resolver ) = @_;
+    my $pica = $record->fields('003@') or return;
+
+    # FIXME: support other vocabularies as well
+    return if $to->{uri} ne "http://bartoc.org/en/node/18785";
+
+    my @fromNotations = $record->values( $from->{PICAPATH} ) or return;
+    my @toNotations   = $record->values( $to->{PICAPATH} );
+
+    my $source = "coli-conc $from->{notation}[0]\->$to->{notation}[0]";
+
+    # TODO: bestehende Mappings kontrollieren und ggf. ändern ?
+
+    my $enrich = getBKEnrichment( $from, $to, @fromNotations ) or return;
+
+    # don't enrich existing notations
+    delete $enrich->{$_} for @toNotations;
+
+    while ( my ( $notation, $mappingUri ) = each %$enrich ) {
+        my $conceptPPN = $resolver->($notation);
+
+        push @$pica,
+          [
+            $to->{PICAPATH}->fields,
+            $to->{PICAPATH}->occurrences,
+            9 => $conceptPPN,
+            a => $notation,
+            A => $source,
+            A => $mappingUri,
+            '+'
+          ];
+    }
+
+    return @$pica > 1 ? $pica : undef;
 }
 
 1;

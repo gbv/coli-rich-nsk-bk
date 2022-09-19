@@ -10,8 +10,7 @@ die "Bitte RVK-Klasse angeben (muss mit zwei Buchstaben anfangen)!\n"
   unless $rvkNotation =~ /^[A-Z][A-Z]/;
 
 # PICA-Teildump einlesen (könnte auch direkt per SRU abgefragt werden)
-my $rvkBase = substr $rvkNotation, 0, 2;
-my $parser = pica_parser( 'plain', bless => 1, fh => "$rvkBase.pica" );
+my $parser = pica_parser( 'plain', bless => 1, fh => "$rvkNotation.pica" );
 
 # Finde passendes Mapping (TODO: Nur bestätigte Mappings?)
 my $api      = JSON::API->new('http://coli-conc.gbv.de/api/mappings');
@@ -22,7 +21,7 @@ my @mappings = @{
             from      => $rvkNotation,
             fromSchme => 'http://uri.gbv.de/terminology/rvk/',
             toScheme  => 'http://uri.gbv.de/terminology/bk/',
-            type =>
+            type      =>
 'http://www.w3.org/2004/02/skos/core#exactMatch|http://www.w3.org/2004/02/skos/core#narrowMatch',
         }
     )
@@ -63,7 +62,7 @@ else {
 my $outFile = "$rvkNotation.rvk2bk.pica";
 $outFile =~ s/ //g;
 my $writer = pica_writer( 'plain', annotated => 1, fh => $outFile );
-my $count = 0;
+my $count  = 0;
 
 sub isNarrowerOrEqualRVK {
     my ( $parent, $child ) = map { s/ //gr } @_;
@@ -142,7 +141,7 @@ sub getBKByNotation {
 
     # get PPN of BK record
     my $importer = importer( 'kxpnorm', query => "pica.bkl=$notation" );
-    my $pica = $importer->next;
+    my $pica     = $importer->next;
     die "Failed to get unique PPN for BK record $notation\n"
       if !$pica || $importer->next;
 

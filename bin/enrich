@@ -9,6 +9,7 @@ use Cwd qw(abs_path);
 use FindBin;
 use lib abs_path("$FindBin::Bin/../lib");
 use ColiRich;
+use MappingSource;
 
 GetOptions( \my %opt, 'help|?', 'full|f' )
   or pod2usage(2);
@@ -17,7 +18,6 @@ pod2usage( -verbose => 99, -sections => [qw(SYNOPSIS OPTIONS EXAMPLES)] )
 
 pod2usage("missing schemes argument")   if @ARGV < 1;
 pod2usage("malformed schemes argument") if $ARGV[0] !~ /^[^-]+-[^-]+$/;
-pod2usage("missing table argument")     if @ARGV < 2;
 
 my ( $from, $to ) =
   map { getScheme( notation => $_ ) or pod2usage("unknown scheme $_") }
@@ -31,7 +31,9 @@ if ($to->{uri} ne "http://bartoc.org/en/node/18785") {
     die "Sorry, only enrichment with BK supported by now!\n";
 }
 
-my $mappingTable = MappingTable->new( shift @ARGV );
+my $mappingTable = $opt{table} 
+    ? MappingTable->new( $opt{table} ) 
+    : MappingSource->new();
 
 my $parser = pica_parser('plain');
 my $writer = pica_writer( 'plain', annotated => 1 );
@@ -98,8 +100,9 @@ package MappingTable {
 
     sub new {
         my ( $class, $file, %options ) = @_;
+
         my $table = Catmandu->importer( 'JSON', file => $file )->next;
-        
+    
         my $concepts = {};
         my $visit;
         $visit = sub {            
@@ -149,14 +152,15 @@ package MappingTable {
 
 =head1 SYNOPSIS
 
- enrich [options] <schemes> <tablefile>
+ enrich [options] <schemes>
 
- Enrich PICA Plain records (from stdin) based on a mapping table.
+ Enrich PICA Plain records (from stdin) based on a inference API or mapping table.
 
 =head1 OPTIONS
  
- --help|-h       this help message
+ --help|-h       self help message
  --full|-f       emit full PICA Plain record, not only enriched fields
+ --table|-t      mapping table file
 
 =head1 EXAMPLES
 
