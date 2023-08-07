@@ -12,22 +12,18 @@ Die Auswahl der für das Mapping in Frage kommenden Mappings basiert auf zwei Kr
 
 * Inhaltlich: Die ausgewählten Mappings müssen vertrauenswürdig sein. Die Auswahl kann auf Grundlage folgender Informationen erfolgen:
 
-  * der Benutzeraccount unter dem ein Mapping erstellt wurde
-  * ob das Mapping bestätigt wurde (die Bestätigung von Mappings ist nur ausgewählten Benutzeraccounts möglich)
-  * ob und wie das Mapping bewertet wurde (alle Benutzeraccounts können Mappings mit +1 oder -1 bewerten)
-  * ob und zu welcher Konkordanz das Mapping gehört (noch nicht umgesetzt)
+  1. der Benutzeraccount unter dem ein Mapping erstellt wurde
+  2. ob das Mapping bestätigt wurde (die Bestätigung von Mappings ist nur ausgewählten Benutzeraccounts möglich)
+  3. ob und wie das Mapping bewertet wurde (alle Benutzeraccounts können Mappings mit +1 oder -1 bewerten)
+  4. ob und zu welcher Konkordanz das Mapping gehört
 
-  Momentan werden Mappings ausgewählt die *entweder* bestätigt wurden *oder* von einem ausgewählten Benutzeraccount stammen und nicht negativ bewertet wurden. Die Liste der ausgewählten Benutzeraccounts lässt sich konfigurieren.
+  Momentan werden Mappings ausgewählt die zu einer Konkordanz gehören *und* nicht negativ bewertet wurden.
 
 Geplant is noch eine zusätzliche Konsistenzprüfung, nach der die ausgewählten Mappings in sich widerspruchsfrei sein müssen. So sollte beispielsweise eine RVK-Unterklasse nicht auf eine umfassendere BK-Klasse gemappt sein als ihre Oberklasse.
 
 ## Auswahl von Titeldatensätzen
 
-In der Pilotphase werden alle Titeldatensätze im K10plus ausgewählt, die mit RVK aber nicht mit BK erschlossen sind. Dabei gibt es zwei Möglichkeiten:
-
-* Auswahl aller Titeldatensätze die mit einer RVK-Klasse oder mit in der Hierarchie darunter liegenden Klassen erschlossen sind (per SRU-Suchanfrage). Dies hat den Vorteil dass ausgehend von einem Mapping alle anzureichernden Titel ausgewählt werden können.
-
-* Auswahl konkreter Titeldatensätze (per PPN oder PPN-Liste). Hierbei muss für jeden Titel einzeln geprüft werden ob und welche passenden Mappings zur Anreicherung vorhanden sind, was insgesamt langsamer ist.
+In der Pilotphase werden alle Titeldatensätze im K10plus ausgewählt, die mit RVK aber nicht mit BK erschlossen sind.
 
 Im Produktivbetrieb soll das Verfahren erweitert werden um vorhandene BK-Notationen zu überprüfen und um angereicherte BK-Notationen anzupassen wenn die ausgewählten Mappings geändert haben.
 
@@ -40,23 +36,18 @@ Nach Auswahl von Mappings und Titeldatensätzen können Datensätze mit einer RV
 * Gibt es stattdessen eine (ggf. transitive) Oberklasse γ von α mit einem Mapping γ = β oder γ < β dann passt ebenfalls die BK-Klasse β.
   Allerdings kann es sein, dass eine Unterklassen von β noch besser passen würde.
 
+Diese Ermittlung der Anreicherung erfolgt über den [`infer` Endpunkt von JSKOS-Server](https://github.com/gbv/jskos-server#get-mappingsinfer).
+
 ## Skripte
 
-* `./download-by-rvk.sh` läd Titeldatensätze beschränkt auf Normdatenfelder
-  (BK und RVK) aus dem K10plus. Zur Vereinfachung der Suche nach RVK-Notationen
-  werden nur Notationen aus zwei Buchstaben unterstützt, es werden jedoch alle
-  mit diesen Buchstaben beginnenden Notationen gefunden.
+- `bk2ppn.csv` enthält PPN für BK-Normdatensätze
+- `bk2ppn.sh` ermittelt PPN für BK-Normdatensätze
 
-  Das vollständige Herunterladen aller Datensätze mit RVK ist theoretisch so möglich (dauert fast einen
-  Tag), es gibt aber einige Klassen deren Ergebnismengen zu groß sind:
+- bk-from-rvk.js
+- `rvk-no-bk.pl` erzeugt Anreicherungen im PICA-Patch-Format
+- `ppshow.pl`
 
-  ~~~bash
-  for X in {A..Z}; do for Y in {A..Z}; do ./download-by-rvk.sh $X$Y; done; done
-  ~~~
-
-* `rvkbk-mappings.sh` läd RVK-BK-Mappings vom Typ < oder = für eine gegebene RVK-Notation, mit Annotationen
-
-* `trusted-mappings.jq`: filtern Mappings denen für die Anreicherung vertraut werden kann
+### Deprecated
 
 * `rvk2bk.pl` sucht ausgehend von einer RVK-Notation nach passenden Mappings
   und geht die betreffende Download-Datei durch um BK-Anreicherung zu erzeugen. Beispiel:
@@ -65,6 +56,8 @@ Nach Auswahl von Mappings und Titeldatensätzen können Datensätze mit einer RV
   ./rvk2bk.pl "ET 500"  # TODO: Unterklassen einbeziehen
   ./rvk2bk.pl "XL"      # Ganze Oberklasse (weil auf BK-Blattknoten gemappt)
   ~~~
+
+* `coli-rich` liest normalisierte PICA+ Datensätze von STDIN und gibt PICA Patch aus.
 
 ## Beispiele
 
@@ -79,5 +72,5 @@ Hauptklassen der RVK, die per exactMatch auf eine BK-Unterklasse der untersten E
 Klassen der RVK, die per exactMatch auf eine beliebige BK-Klasse gemappt sind:
 
 * `ET 500` Lexikologie
-* `ST 240 - ST 250` Programmiersprachen (derzeit nicht unterstützt, da Unterklassen relevant)
+* ...
 

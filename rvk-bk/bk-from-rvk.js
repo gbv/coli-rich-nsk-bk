@@ -17,7 +17,8 @@ for (let rvk of args) {
     })
 
     for (let m of mappings) {
-        const to = m.to.memberSet.map(c => c.notation[0])
+        const to = m.to?.memberSet?.map(c => c.notation[0])
+        if (!to.length) continue
         const uri = m.source ? m.source[0].uri : m.uri
         if (m.source) {
           [m] = await request("https://coli-conc.gbv.de/api/mappings", { uri, properties: "uri,partOf,annotations" })
